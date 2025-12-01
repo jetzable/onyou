@@ -1,0 +1,2406 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ONYOU - Configurador de Prendas Personalizadas</title>
+    
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Firebase CDN -->
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+    
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;500;600;700&family=Montserrat:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    <style>
+        :root {
+            --primary: #6eb5c0;        /* Azul turquesa suave del logo */
+            --secondary: #f4a261;      /* Naranja coral cálido */
+            --accent: #a3d977;         /* Verde lima suave */
+            --accent-purple: #b298dc;  /* Morado/lila suave */
+            --accent-yellow: #f9d97e;  /* Amarillo suave */
+            --background: #faf8f5;     /* Crema muy suave */
+            --text: #2c2c2c;           /* Gris oscuro para texto */
+            --border: #e8e4df;         /* Borde suave */
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Montserrat', sans-serif;
+            background: var(--background);
+            color: var(--text);
+            overflow-x: hidden;
+        }
+
+        .serif {
+            font-family: 'Cormorant Garamond', serif;
+        }
+
+        /* Animaciones de entrada */
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        @keyframes shimmer {
+            0% { background-position: -1000px 0; }
+            100% { background-position: 1000px 0; }
+        }
+
+        .animate-fade-in-up {
+            animation: fadeInUp 0.8s ease-out forwards;
+        }
+
+        .animate-fade-in {
+            animation: fadeIn 1s ease-out forwards;
+        }
+
+        .delay-100 { animation-delay: 0.1s; opacity: 0; }
+        .delay-200 { animation-delay: 0.2s; opacity: 0; }
+        .delay-300 { animation-delay: 0.3s; opacity: 0; }
+        .delay-400 { animation-delay: 0.4s; opacity: 0; }
+
+        /* Header con efecto de lujo */
+        .luxury-header {
+            background: linear-gradient(135deg, var(--primary) 0%, #1a1a1a 100%);
+            border-bottom: 2px solid var(--secondary);
+            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+        }
+
+        /* Botones personalizados */
+        .btn-primary {
+            background: linear-gradient(135deg, #6eb5c0 0%, #a3d977 100%);
+            color: white;
+            font-weight: 600;
+            padding: 14px 32px;
+            border-radius: 8px;
+            border: none;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            font-size: 14px;
+            box-shadow: 0 4px 15px rgba(110, 181, 192, 0.3);
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 25px rgba(110, 181, 192, 0.4);
+            background: linear-gradient(135deg, #5da4af 0%, #92c866 100%);
+        }
+
+        .btn-secondary {
+            background: transparent;
+            color: #6eb5c0;
+            border: 2px solid #6eb5c0;
+            padding: 12px 28px;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-weight: 500;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            font-size: 14px;
+        }
+
+        .btn-secondary:hover {
+            background: #6eb5c0;
+            color: white;
+        }
+
+        /* Botones activos para Sí/No */
+        .btn-secondary.active {
+            background: #6eb5c0;
+            color: white;
+        }
+
+        /* Vista previa del bordado */
+        .embroidery-preview-text {
+            user-select: none;
+            letter-spacing: 1px;
+        }
+
+        /* Radio buttons personalizados */
+        .custom-radio {
+            appearance: none;
+            width: 20px;
+            height: 20px;
+            border: 2px solid var(--border);
+            border-radius: 50%;
+            outline: none;
+            cursor: pointer;
+            position: relative;
+            transition: all 0.3s ease;
+        }
+
+        .custom-radio:checked {
+            border-color: var(--secondary);
+        }
+
+        .custom-radio:checked::after {
+            content: '';
+            position: absolute;
+            width: 10px;
+            height: 10px;
+            background: var(--secondary);
+            border-radius: 50%;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+        }
+
+        /* Selector de color personalizado */
+        .color-swatch {
+            width: 50px;
+            height: 50px;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            border: 3px solid transparent;
+            position: relative;
+        }
+
+        .color-swatch:hover {
+            transform: scale(1.1);
+        }
+
+        .color-swatch.active {
+            border-color: var(--secondary);
+            box-shadow: 0 0 20px rgba(212, 175, 55, 0.5);
+        }
+
+        /* Panel de pestañas */
+        .tab-button {
+            padding: 16px 24px;
+            background: transparent;
+            border: none;
+            border-bottom: 3px solid transparent;
+            cursor: pointer;
+            font-weight: 500;
+            color: #666;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            font-size: 13px;
+        }
+
+        .tab-button.active {
+            color: #6eb5c0;
+            border-bottom-color: #f4a261;
+            font-weight: 600;
+        }
+
+        .tab-button:hover {
+            color: #6eb5c0;
+        }
+
+        /* Canvas interactivo */
+        #canvas-container {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.1);
+            position: relative;
+            overflow: hidden;
+        }
+
+        #design-canvas {
+            cursor: move;
+            border-radius: 12px;
+        }
+
+        /* Panel de resumen */
+        .summary-card {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.08);
+            padding: 28px;
+            border: 1px solid var(--border);
+        }
+
+        .summary-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 12px 0;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .summary-item:last-child {
+            border-bottom: none;
+        }
+
+        /* Elementos de diseño */
+        .design-element {
+            position: absolute;
+            cursor: move;
+            border: 2px dashed transparent;
+            transition: border-color 0.3s ease;
+        }
+
+        .design-element.selected {
+            border-color: var(--secondary);
+        }
+
+        .design-element .resize-handle {
+            position: absolute;
+            width: 12px;
+            height: 12px;
+            background: var(--secondary);
+            border: 2px solid white;
+            border-radius: 50%;
+            right: -6px;
+            bottom: -6px;
+            cursor: nwse-resize;
+            display: none;
+        }
+
+        .design-element.selected .resize-handle {
+            display: block;
+        }
+
+        .design-element .rotate-handle {
+            position: absolute;
+            width: 12px;
+            height: 12px;
+            background: var(--accent);
+            border: 2px solid white;
+            border-radius: 50%;
+            right: -6px;
+            top: -6px;
+            cursor: grab;
+            display: none;
+        }
+
+        .design-element.selected .rotate-handle {
+            display: block;
+        }
+
+        /* Texture background */
+        .texture-bg {
+            background-image: 
+                repeating-linear-gradient(
+                    45deg,
+                    transparent,
+                    transparent 10px,
+                    rgba(212, 175, 55, 0.02) 10px,
+                    rgba(212, 175, 55, 0.02) 20px
+                );
+        }
+
+        /* Loading shimmer */
+        .shimmer {
+            background: linear-gradient(
+                90deg,
+                var(--border) 0px,
+                rgba(229, 229, 224, 0.5) 40px,
+                var(--border) 80px
+            );
+            background-size: 1000px 100%;
+            animation: shimmer 2s infinite;
+        }
+
+        /* Responsive */
+        @media (max-width: 1024px) {
+            .desktop-layout {
+                flex-direction: column;
+            }
+            
+            .panel-left, .panel-center, .panel-right {
+                width: 100% !important;
+                margin-bottom: 24px;
+            }
+        }
+
+        /* Toast notifications */
+        .toast {
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            background: var(--primary);
+            color: white;
+            padding: 16px 24px;
+            border-radius: 8px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+            z-index: 1000;
+            animation: slideInUp 0.4s ease-out;
+        }
+
+        @keyframes slideInUp {
+            from {
+                transform: translateY(100px);
+                opacity: 0;
+            }
+            to {
+                transform: translateY(0);
+                opacity: 1;
+            }
+        }
+
+        /* Custom scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: var(--background);
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: var(--accent);
+            border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: var(--secondary);
+        }
+    </style>
+</head>
+<body>
+    <!-- Header -->
+    <header class="bg-white shadow-md sticky top-0 z-50 border-b-4 animate-fade-in" style="border-bottom-color: #f89e3e;">
+        <div class="container mx-auto px-6 py-6">
+            <div class="flex flex-col items-center justify-center text-center">
+                <h1 class="text-6xl font-bold mb-2" style="font-family: 'Comic Sans MS', cursive; letter-spacing: 3px;">
+                    <span style="color: #6eb5c0;">O</span><span style="color: #f4a261;">N</span><span style="color: #f9d97e;">Y</span><span style="color: #a3d977;">O</span><span style="color: #9b87c4;">U</span>
+                </h1>
+                <p class="text-gray-800 text-base italic font-medium">"Cada prenda tiene algo que contar, ¿listo para contar la tuya?"</p>
+                <p class="text-gray-700 text-sm mt-1 font-bold tracking-wide">Fit as you WISH</p>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="container mx-auto px-6 py-12">
+        <div class="desktop-layout flex gap-8">
+            <!-- Panel Izquierdo: Configurador -->
+            <div class="panel-left w-full lg:w-1/4 animate-fade-in-up delay-100">
+                <div class="bg-white rounded-xl shadow-lg p-6 border border-gray-200">
+                    <!-- Tabs de navegación -->
+                    <div class="flex border-b border-gray-200 mb-6">
+                        <button class="tab-button active" data-tab="producto" onclick="switchTab('producto')">
+                            1. Producto
+                        </button>
+                        <button class="tab-button" data-tab="personalizar" onclick="switchTab('personalizar')">
+                            2. Diseño
+                        </button>
+                        <button class="tab-button" data-tab="finalizar" onclick="switchTab('finalizar')">
+                            3. Finalizar
+                        </button>
+                        <button class="tab-button" data-tab="pago" onclick="switchTab('pago')">
+                            4. Pago
+                        </button>
+                    </div>
+
+                    <!-- Tab 1: Selección de Producto -->
+                    <div id="tab-producto" class="tab-content">
+                        <h3 class="text-xl font-semibold mb-4 serif">Selecciona tu Prenda</h3>
+                        
+                        <!-- Tipo de prenda -->
+                        <div class="mb-6">
+                            <label class="block text-sm font-medium mb-3 text-gray-700">Tipo de Prenda</label>
+                            <div class="space-y-3">
+                                <label class="flex items-center justify-between p-4 border-2 border-gray-200 rounded-lg cursor-pointer hover:border-gray-300 transition">
+                                    <div class="flex items-center">
+                                        <input type="radio" name="garment-type" value="playera" class="custom-radio" checked onchange="updateGarment()">
+                                        <span class="ml-3 font-medium">👕 Playera</span>
+                                    </div>
+                                    <span class="text-teal-500 font-bold">$200 MXN</span>
+                                </label>
+                                <label class="flex items-center justify-between p-4 border-2 border-gray-200 rounded-lg cursor-pointer hover:border-gray-300 transition">
+                                    <div class="flex items-center">
+                                        <input type="radio" name="garment-type" value="sudadera" class="custom-radio" onchange="updateGarment()">
+                                        <span class="ml-3 font-medium">🧥 Sudadera</span>
+                                    </div>
+                                    <span class="text-teal-500 font-bold">$500 MXN</span>
+                                </label>
+                                <label class="flex items-center justify-between p-4 border-2 border-gray-200 rounded-lg cursor-pointer hover:border-gray-300 transition">
+                                    <div class="flex items-center">
+                                        <input type="radio" name="garment-type" value="cobija" class="custom-radio" onchange="updateGarment()">
+                                        <span class="ml-3 font-medium">🛏️ Cobija</span>
+                                    </div>
+                                    <span class="text-teal-500 font-bold">$400 MXN</span>
+                                </label>
+                                <label class="flex items-center justify-between p-4 border-2 border-gray-200 rounded-lg cursor-pointer hover:border-gray-300 transition">
+                                    <div class="flex items-center">
+                                        <input type="radio" name="garment-type" value="gorra" class="custom-radio" onchange="updateGarment()">
+                                        <span class="ml-3 font-medium">🧢 Gorra</span>
+                                    </div>
+                                    <span class="text-teal-500 font-bold">$150 MXN</span>
+                                </label>
+                            </div>
+                        </div>
+
+                        <!-- Material -->
+                        <div class="mb-6">
+                            <label class="block text-sm font-medium mb-3 text-gray-700">Material</label>
+                            <select id="material-select" class="w-full p-3 border-2 border-gray-200 rounded-lg focus:border-gray-400 focus:outline-none transition" onchange="updateConfig()">
+                                <option value="algodon">Algodón 100%</option>
+                                <option value="poliester">Poliéster Premium - Sin costo adicional</option>
+                                <option value="mezcla">Semi-Poliéster/Semi-Algodón</option>
+                            </select>
+                            <div class="mt-2 text-xs text-gray-600 bg-teal-50 p-2 rounded">
+                                <p><strong>💰 Costos adicionales por material:</strong></p>
+                                <p>• Algodón: varía según prenda (+$25 a +$75 MXN)</p>
+                                <p>• Poliéster: sin costo adicional</p>
+                                <p>• Semi-Poliéster/Semi-Algodón: varía según prenda (+$10 a +$35 MXN)</p>
+                            </div>
+                        </div>
+
+                        <!-- Selecciona tu talla -->
+                        <div class="mb-6">
+                            <label class="block text-sm font-medium mb-3 text-gray-700">Selecciona tu Talla</label>
+                            <div id="size-selector">
+                                <!-- Las opciones se cargarán dinámicamente según el tipo de prenda -->
+                            </div>
+                        </div>
+
+                        <button class="btn-primary w-full mt-4" onclick="switchTab('personalizar')">
+                            Siguiente: Diseño
+                        </button>
+                    </div>
+
+                    <!-- Tab 2: Personalización -->
+                    <div id="tab-personalizar" class="tab-content hidden">
+                        <h3 class="text-xl font-semibold mb-4 serif">Diseña tu Prenda</h3>
+                        
+                        <!-- Color de la prenda -->
+                        <div class="mb-6">
+                            <label class="block text-sm font-medium mb-3 text-gray-700">Color de Base</label>
+                            <div class="grid grid-cols-5 gap-3">
+                                <div class="color-swatch active" style="background: #ffffff; border: 2px solid #e5e5e0;" onclick="selectGarmentColor('#ffffff', this)"></div>
+                                <div class="color-swatch" style="background: #000000;" onclick="selectGarmentColor('#000000', this)"></div>
+                                <div class="color-swatch" style="background: #1e3a8a;" onclick="selectGarmentColor('#1e3a8a', this)"></div>
+                                <div class="color-swatch" style="background: #991b1b;" onclick="selectGarmentColor('#991b1b', this)"></div>
+                                <div class="color-swatch" style="background: #047857;" onclick="selectGarmentColor('#047857', this)"></div>
+                                <div class="color-swatch" style="background: #7c2d12;" onclick="selectGarmentColor('#7c2d12', this)"></div>
+                                <div class="color-swatch" style="background: #4c1d95;" onclick="selectGarmentColor('#4c1d95', this)"></div>
+                                <div class="color-swatch" style="background: #be123c;" onclick="selectGarmentColor('#be123c', this)"></div>
+                                <div class="color-swatch" style="background: #ea580c;" onclick="selectGarmentColor('#ea580c', this)"></div>
+                                <div class="color-swatch" style="background: #facc15;" onclick="selectGarmentColor('#facc15', this)"></div>
+                            </div>
+                        </div>
+
+                        <!-- Método de diseño: Bordado o Impreso -->
+                        <div class="mb-6 p-4 bg-amber-50 border-2 border-amber-200 rounded-lg">
+                            <label class="block text-sm font-medium mb-3 text-gray-700">¿El diseño será bordado o impreso?</label>
+                            <div class="space-y-3">
+                                <label class="flex items-center p-3 border-2 border-gray-200 bg-white rounded-lg cursor-pointer hover:border-amber-300 transition">
+                                    <input type="radio" name="design-method" value="bordado" class="custom-radio" checked onchange="toggleDesignMethod()">
+                                    <span class="ml-3 font-medium">🧵 Bordado</span>
+                                </label>
+                                <label class="flex items-center p-3 border-2 border-gray-200 bg-white rounded-lg cursor-pointer hover:border-amber-300 transition">
+                                    <input type="radio" name="design-method" value="impreso" class="custom-radio" onchange="toggleDesignMethod()">
+                                    <span class="ml-3 font-medium">🖨️ Impreso</span>
+                                </label>
+                            </div>
+                        </div>
+
+                        <!-- Opciones de Bordado -->
+                        <div id="bordado-options" class="mb-6">
+                            <div class="p-4 bg-teal-50 border-2 border-teal-200 rounded-lg">
+                                <h4 class="font-semibold mb-3 text-teal-900">Opciones de Bordado</h4>
+                                <div class="mb-3 p-2 bg-amber-100 border border-amber-300 rounded text-xs text-amber-800">
+                                    <strong>💰 Costo:</strong> +$150 MXN | Hasta 20 caracteres incluidos, después +$5 MXN por letra
+                                </div>
+                                
+                                <label class="block text-sm font-medium mb-2 text-gray-700">Texto a Bordar</label>
+                                <input type="text" id="embroidery-text" placeholder="Escribe el texto..." class="w-full p-3 border-2 border-gray-200 rounded-lg focus:border-blue-400 focus:outline-none mb-3" oninput="updateEmbroideryPreview()">
+                                
+                                <label class="block text-sm font-medium mb-2 text-gray-700">Tipografía del Bordado</label>
+                                <select id="embroidery-font" class="w-full p-3 border-2 border-gray-200 rounded-lg focus:border-blue-400 focus:outline-none mb-3" onchange="updateEmbroideryPreview()">
+                                    <option value="serif">Serif Clásica</option>
+                                    <option value="sans-serif">Sans-Serif Moderna</option>
+                                    <option value="script">Script Elegante</option>
+                                    <option value="monospace">Monospace Técnica</option>
+                                    <option value="display">Display Impactante</option>
+                                </select>
+
+                                <label class="block text-sm font-medium mb-2 text-gray-700">Ubicación del Bordado</label>
+                                <div id="location-info" class="mb-2 p-2 bg-blue-100 border border-blue-300 rounded text-xs text-blue-800">
+                                    <span id="location-message">📍 Selecciona dónde quieres que aparezca el bordado en tu playera</span>
+                                </div>
+                                <select id="embroidery-position" class="w-full p-3 border-2 border-gray-200 rounded-lg focus:border-blue-400 focus:outline-none mb-3" onchange="updateEmbroideryPreview()">
+                                    <option value="centro-pecho">⭐ Centro del Pecho</option>
+                                    <option value="lado-izquierdo">⬅️ Lado Izquierdo</option>
+                                    <option value="lado-derecho">➡️ Lado Derecho</option>
+                                    <option value="espalda-superior">🔝 Espalda Superior</option>
+                                    <option value="espalda-centro">🎯 Espalda Centro</option>
+                                    <option value="manga-izquierda">💪 Manga Izquierda</option>
+                                    <option value="manga-derecha">💪 Manga Derecha</option>
+                                </select>
+
+                                <label class="block text-sm font-medium mb-2 text-gray-700">Color del Hilo</label>
+                                <div class="grid grid-cols-5 gap-2">
+                                    <div class="color-swatch" style="background: #000000;" onclick="selectEmbroideryColor('#000000', this)"></div>
+                                    <div class="color-swatch" style="background: #ffffff; border: 2px solid #e5e5e0;" onclick="selectEmbroideryColor('#ffffff', this)"></div>
+                                    <div class="color-swatch" style="background: #d4af37;" onclick="selectEmbroideryColor('#d4af37', this)"></div>
+                                    <div class="color-swatch" style="background: #c0c0c0;" onclick="selectEmbroideryColor('#c0c0c0', this)"></div>
+                                    <div class="color-swatch" style="background: #1e3a8a;" onclick="selectEmbroideryColor('#1e3a8a', this)"></div>
+                                    <div class="color-swatch" style="background: #991b1b;" onclick="selectEmbroideryColor('#991b1b', this)"></div>
+                                    <div class="color-swatch" style="background: #047857;" onclick="selectEmbroideryColor('#047857', this)"></div>
+                                    <div class="color-swatch" style="background: #7c2d12;" onclick="selectEmbroideryColor('#7c2d12', this)"></div>
+                                    <div class="color-swatch" style="background: #ec4899;" onclick="selectEmbroideryColor('#ec4899', this)"></div>
+                                    <div class="color-swatch" style="background: #f59e0b;" onclick="selectEmbroideryColor('#f59e0b', this)"></div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Opciones de Impresión -->
+                        <div id="impreso-options" class="mb-6 hidden">
+                            <div class="p-4 bg-purple-100 border-2 border-purple-200 rounded-lg">
+                                <h4 class="font-semibold mb-3 text-purple-900">Opciones de Impresión</h4>
+                                <div class="mb-3 p-2 bg-amber-100 border border-amber-300 rounded text-xs text-amber-800">
+                                    <strong>💰 Costo:</strong> +$100 MXN base | Pequeño incluido | Mediano +$50 MXN | Grande +$100 MXN
+                                </div>
+                                
+                                <label class="block text-sm font-medium mb-2 text-gray-700">Cargar Imagen</label>
+                                <input type="file" id="print-image" accept="image/*" class="w-full p-3 border-2 border-gray-200 rounded-lg focus:border-purple-400 focus:outline-none mb-3" onchange="handleImageUpload(event)">
+                                
+                                <div id="image-preview" class="mb-3 hidden">
+                                    <label class="block text-sm font-medium mb-2 text-gray-700">Vista Previa</label>
+                                    <div class="border-2 border-gray-200 rounded-lg p-2 bg-white">
+                                        <img id="preview-img" src="" alt="Vista previa" class="max-w-full h-auto max-h-48 mx-auto">
+                                    </div>
+                                </div>
+
+                                <label class="block text-sm font-medium mb-2 text-gray-700">Ubicación de la Impresión</label>
+                                <div id="print-location-info" class="mb-2 p-2 bg-purple-100 border border-purple-300 rounded text-xs text-purple-800">
+                                    <span id="print-location-message">📍 Selecciona dónde quieres que aparezca la impresión en tu playera</span>
+                                </div>
+                                <select id="print-position" class="w-full p-3 border-2 border-gray-200 rounded-lg focus:border-purple-400 focus:outline-none mb-3">
+                                    <option value="centro-pecho">⭐ Centro del Pecho</option>
+                                    <option value="lado-izquierdo">⬅️ Lado Izquierdo</option>
+                                    <option value="lado-derecho">➡️ Lado Derecho</option>
+                                    <option value="espalda-completa">📐 Espalda Completa</option>
+                                    <option value="espalda-superior">🔝 Espalda Superior</option>
+                                    <option value="espalda-centro">🎯 Espalda Centro</option>
+                                    <option value="manga-izquierda">💪 Manga Izquierda</option>
+                                    <option value="manga-derecha">💪 Manga Derecha</option>
+                                </select>
+
+                                <label class="block text-sm font-medium mb-2 text-gray-700">Tamaño de Impresión</label>
+                                <select id="print-size" class="w-full p-3 border-2 border-gray-200 rounded-lg focus:border-purple-400 focus:outline-none" onchange="updateSummary()">
+                                    <option value="pequeño">Pequeño (hasta 20 cm²) - Incluido</option>
+                                    <option value="mediano" selected>Mediano (hasta 50 cm²) - +$50 MXN</option>
+                                    <option value="grande">Grande (más de 50 cm²) - +$100 MXN</option>
+                                    <option value="extra-grande">Extra Grande - +$100 MXN</option>
+                                </select>
+                                    <option value="extra-grande">Extra Grande (40x40 cm)</option>
+                                </select>
+                            </div>
+                        </div>
+                        
+                        <!-- Añadir texto adicional -->
+                        <div id="text-adicional-section" class="mb-6 hidden">
+                            <label class="block text-sm font-medium mb-3 text-gray-700">¿Desea añadir texto adicional?</label>
+                            
+                            <!-- Información de costos -->
+                            <div class="mb-3 p-3 bg-blue-50 border border-blue-300 rounded-lg text-sm text-blue-800">
+                                <strong>💰 Costos:</strong> 
+                                <ul class="list-disc list-inside mt-1">
+                                    <li>Primeros 20 caracteres: <strong>$10 MXN</strong></li>
+                                    <li>Cada carácter adicional: <strong>$3 MXN</strong></li>
+                                </ul>
+                            </div>
+                            
+                            <div class="flex gap-4 mb-4">
+                                <button type="button" class="btn-secondary flex-1" id="btn-text-si" onclick="toggleAdditionalText(true)">
+                                    ✓ Sí
+                                </button>
+                                <button type="button" class="btn-secondary flex-1" id="btn-text-no" onclick="toggleAdditionalText(false)">
+                                    ✗ No
+                                </button>
+                            </div>
+
+                            <!-- Opciones de texto adicional (ocultas por defecto) -->
+                            <div id="additional-text-options" class="hidden">
+                                <input type="text" id="text-input" placeholder="Escribe tu texto..." class="w-full p-3 border-2 border-gray-200 rounded-lg focus:border-gray-400 focus:outline-none mb-3">
+                                
+                                <label class="block text-sm font-medium mb-2 text-gray-700">Fuente</label>
+                                <select id="font-select" class="w-full p-3 border-2 border-gray-200 rounded-lg focus:border-gray-400 focus:outline-none mb-3">
+                                    <option value="Arial">Arial</option>
+                                    <option value="'Courier New'">Courier New</option>
+                                    <option value="Georgia">Georgia</option>
+                                    <option value="Impact">Impact</option>
+                                    <option value="'Times New Roman'">Times New Roman</option>
+                                    <option value="'Trebuchet MS'">Trebuchet MS</option>
+                                    <option value="Verdana">Verdana</option>
+                                    <option value="'Cormorant Garamond'">Cormorant (Serif)</option>
+                                    <option value="Montserrat">Montserrat</option>
+                                </select>
+
+                                <label class="block text-sm font-medium mb-2 text-gray-700">Color del Texto</label>
+                                <div class="grid grid-cols-5 gap-3 mb-3">
+                                    <div class="color-swatch" style="background: #000000;" onclick="selectTextColor('#000000')"></div>
+                                    <div class="color-swatch" style="background: #ffffff; border: 2px solid #e5e5e0;" onclick="selectTextColor('#ffffff')"></div>
+                                    <div class="color-swatch" style="background: #ef4444;" onclick="selectTextColor('#ef4444')"></div>
+                                    <div class="color-swatch" style="background: #3b82f6;" onclick="selectTextColor('#3b82f6')"></div>
+                                    <div class="color-swatch" style="background: #10b981;" onclick="selectTextColor('#10b981')"></div>
+                                    <div class="color-swatch" style="background: #f59e0b;" onclick="selectTextColor('#f59e0b')"></div>
+                                    <div class="color-swatch" style="background: #8b5cf6;" onclick="selectTextColor('#8b5cf6')"></div>
+                                    <div class="color-swatch" style="background: #ec4899;" onclick="selectTextColor('#ec4899')"></div>
+                                    <div class="color-swatch" style="background: #d4af37;" onclick="selectTextColor('#d4af37')"></div>
+                                    <div class="color-swatch" style="background: #6b7280;" onclick="selectTextColor('#6b7280')"></div>
+                                </div>
+
+                                <button class="btn-secondary w-full" onclick="addText()">
+                                    Añadir Texto
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Añadir forma -->
+                        <div id="shape-section" class="mb-6 hidden">
+                            <label class="block text-sm font-medium mb-3 text-gray-700">¿Desea añadir una forma?</label>
+                            <div class="flex gap-4 mb-4">
+                                <button type="button" class="btn-secondary flex-1" id="btn-shape-si" onclick="toggleShapeOptions(true)">
+                                    ✓ Sí
+                                </button>
+                                <button type="button" class="btn-secondary flex-1" id="btn-shape-no" onclick="toggleShapeOptions(false)">
+                                    ✗ No
+                                </button>
+                            </div>
+
+                            <!-- Opciones de formas (ocultas por defecto) -->
+                            <div id="shape-options" class="hidden">
+                                <div class="grid grid-cols-3 gap-3">
+                                    <button class="p-4 border-2 border-gray-200 rounded-lg hover:border-gray-400 transition" onclick="addShape('circle')">
+                                        <div class="w-12 h-12 bg-gray-300 rounded-full mx-auto"></div>
+                                        <span class="block text-xs mt-2">Círculo</span>
+                                    </button>
+                                    <button class="p-4 border-2 border-gray-200 rounded-lg hover:border-gray-400 transition" onclick="addShape('square')">
+                                        <div class="w-12 h-12 bg-gray-300 mx-auto"></div>
+                                        <span class="block text-xs mt-2">Cuadrado</span>
+                                    </button>
+                                    <button class="p-4 border-2 border-gray-200 rounded-lg hover:border-gray-400 transition" onclick="addShape('triangle')">
+                                        <div class="w-0 h-0 border-l-[24px] border-l-transparent border-r-[24px] border-r-transparent border-b-[40px] border-b-gray-300 mx-auto"></div>
+                                        <span class="block text-xs mt-2">Triángulo</span>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Mensaje de visualización -->
+                        <div id="view-design-message" class="hidden p-4 bg-green-50 border-2 border-green-300 rounded-lg text-center">
+                            <p class="text-green-800 font-semibold mb-2">✓ Diseño Listo</p>
+                            <p class="text-sm text-green-700">Puedes visualizar tu diseño en el panel central. Si deseas hacer cambios, usa los controles a continuación.</p>
+                        </div>
+
+                        <!-- Controles del elemento seleccionado -->
+                        <div id="element-controls" class="mb-6 p-4 bg-gray-50 rounded-lg hidden">
+                            <label class="block text-sm font-medium mb-3 text-gray-700">Elemento Seleccionado</label>
+                            <button class="btn-secondary w-full mb-2" onclick="deleteSelectedElement()">
+                                Eliminar Elemento
+                            </button>
+                            <button class="btn-secondary w-full" onclick="duplicateSelectedElement()">
+                                Duplicar Elemento
+                            </button>
+                        </div>
+
+                        <button class="btn-primary w-full mt-4" onclick="switchTab('finalizar')">
+                            Siguiente: Finalizar
+                        </button>
+                    </div>
+
+                    <!-- Tab 3: Finalizar -->
+                    <div id="tab-finalizar" class="tab-content hidden">
+                        <h3 class="text-xl font-semibold mb-4 serif">Información del Pedido</h3>
+                        
+                        <!-- Método de entrega -->
+                        <div class="mb-6 p-4 bg-blue-50 border-2 border-blue-200 rounded-lg">
+                            <label class="block text-sm font-medium mb-3 text-gray-700">¿Cómo deseas recibir tu pedido?</label>
+                            <div class="space-y-3">
+                                <label class="flex items-center p-3 border-2 border-gray-200 bg-white rounded-lg cursor-pointer hover:border-blue-300 transition">
+                                    <input type="radio" name="delivery-method" value="tienda" class="custom-radio" checked onchange="toggleDeliveryAddress()">
+                                    <span class="ml-3 font-medium">🏪 Recoger en Tienda</span>
+                                </label>
+                                <label class="flex items-center p-3 border-2 border-gray-200 bg-white rounded-lg cursor-pointer hover:border-blue-300 transition">
+                                    <input type="radio" name="delivery-method" value="domicilio" class="custom-radio" onchange="toggleDeliveryAddress()">
+                                    <span class="ml-3 font-medium">🚚 Envío a Domicilio</span>
+                                </label>
+                            </div>
+                        </div>
+
+                        <!-- Información del cliente -->
+                        <div class="mb-6">
+                            <label class="block text-sm font-medium mb-2 text-gray-700">Nombre Completo *</label>
+                            <input type="text" id="customer-name" placeholder="Ej: Juan Pérez García" class="w-full p-3 border-2 border-gray-200 rounded-lg focus:border-gray-400 focus:outline-none" required>
+                        </div>
+
+                        <div class="mb-6">
+                            <label class="block text-sm font-medium mb-2 text-gray-700">Correo Electrónico *</label>
+                            <input type="email" id="customer-email" placeholder="ejemplo@correo.com" class="w-full p-3 border-2 border-gray-200 rounded-lg focus:border-gray-400 focus:outline-none" required>
+                        </div>
+
+                        <div class="mb-6">
+                            <label class="block text-sm font-medium mb-2 text-gray-700">Número de Celular *</label>
+                            <input type="tel" id="customer-phone" placeholder="(55) 1234-5678" class="w-full p-3 border-2 border-gray-200 rounded-lg focus:border-gray-400 focus:outline-none" required>
+                        </div>
+
+                        <!-- Dirección (solo si es envío a domicilio) -->
+                        <div id="address-section" class="mb-6 hidden">
+                            <label class="block text-sm font-medium mb-2 text-gray-700">Dirección de Entrega *</label>
+                            <textarea id="customer-address" rows="3" placeholder="Calle, número, colonia, ciudad, estado, código postal" class="w-full p-3 border-2 border-gray-200 rounded-lg focus:border-gray-400 focus:outline-none resize-none"></textarea>
+                        </div>
+
+                        <div class="mb-6">
+                            <label class="block text-sm font-medium mb-2 text-gray-700">Nombre del Diseño *</label>
+                            <input type="text" id="design-name" placeholder="Mi diseño personalizado" class="w-full p-3 border-2 border-gray-200 rounded-lg focus:border-gray-400 focus:outline-none" required>
+                        </div>
+
+                        <div class="mb-6">
+                            <label class="block text-sm font-medium mb-2 text-gray-700">Notas Adicionales</label>
+                            <textarea id="notes-finalizar" rows="4" placeholder="Instrucciones especiales o comentarios sobre tu pedido..." class="w-full p-3 border-2 border-gray-200 rounded-lg focus:border-gray-400 focus:outline-none resize-none"></textarea>
+                        </div>
+
+                        <button class="btn-primary w-full" onclick="saveAndGoToPago()">
+                            Continuar al Pago
+                        </button>
+                    </div>
+
+                    <!-- Tab 4: Pago -->
+                    <div id="tab-pago" class="tab-content hidden">
+                        <h3 class="text-xl font-semibold mb-6 serif text-center">Completa tu Pedido</h3>
+                        
+                        <!-- Métodos de pago -->
+                        <div class="mb-6 p-6 bg-green-100 border-2 border-green-300 rounded-lg">
+                            <label class="block text-lg font-semibold mb-4 text-gray-800 text-center">Selecciona tu Método de Pago</label>
+                            <div class="space-y-3">
+                                <label class="flex items-center p-4 border-2 border-gray-200 bg-white rounded-lg cursor-pointer hover:border-green-400 transition">
+                                    <input type="radio" name="payment-method" value="tarjeta" class="custom-radio" checked>
+                                    <div class="ml-3">
+                                        <span class="font-medium block text-lg">💳 Tarjeta de Crédito/Débito</span>
+                                        <span class="text-sm text-gray-600">Pago seguro con tu tarjeta</span>
+                                    </div>
+                                </label>
+                                <label class="flex items-center p-4 border-2 border-gray-200 bg-white rounded-lg cursor-pointer hover:border-green-400 transition">
+                                    <input type="radio" name="payment-method" value="oxxo" class="custom-radio">
+                                    <div class="ml-3">
+                                        <span class="font-medium block text-lg">🏪 OXXO</span>
+                                        <span class="text-sm text-gray-600">Paga en cualquier tienda OXXO</span>
+                                    </div>
+                                </label>
+                                <label class="flex items-center p-4 border-2 border-gray-200 bg-white rounded-lg cursor-pointer hover:border-green-400 transition">
+                                    <input type="radio" name="payment-method" value="transferencia" class="custom-radio">
+                                    <div class="ml-3">
+                                        <span class="font-medium block text-lg">🏦 Transferencia Bancaria</span>
+                                        <span class="text-sm text-gray-600">Depósito o transferencia directa</span>
+                                    </div>
+                                </label>
+                                <label class="flex items-center p-4 border-2 border-gray-200 bg-white rounded-lg cursor-pointer hover:border-green-400 transition">
+                                    <input type="radio" name="payment-method" value="efectivo" class="custom-radio">
+                                    <div class="ml-3">
+                                        <span class="font-medium block text-lg">💵 Efectivo</span>
+                                        <span class="text-sm text-gray-600">Pago contra entrega o en tienda</span>
+                                    </div>
+                                </label>
+                            </div>
+                        </div>
+
+                        <button class="btn-primary w-full text-lg py-4" onclick="confirmOrder()">
+                            ✅ Confirmar Pedido
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Panel Central: Vista Previa -->
+            <div id="canvas-panel" class="panel-center w-full lg:w-3/4 animate-fade-in-up delay-200 hidden">
+                <div id="canvas-container" class="texture-bg p-8 aspect-square">
+                    <div class="relative w-full h-full">
+                        <!-- Silueta de la prenda -->
+                        <svg id="garment-svg" viewBox="0 0 400 500" class="w-full h-full">
+                            <!-- Definiciones de filtros y efectos 3D -->
+                            <defs>
+                                <!-- Sombra suave para efecto 3D -->
+                                <filter id="shadow3d" x="-50%" y="-50%" width="200%" height="200%">
+                                    <feGaussianBlur in="SourceAlpha" stdDeviation="4"/>
+                                    <feOffset dx="2" dy="4" result="offsetblur"/>
+                                    <feComponentTransfer>
+                                        <feFuncA type="linear" slope="0.3"/>
+                                    </feComponentTransfer>
+                                    <feMerge> 
+                                        <feMergeNode/>
+                                        <feMergeNode in="SourceGraphic"/> 
+                                    </feMerge>
+                                </filter>
+                                
+                                <!-- Degradado para dar volumen -->
+                                <linearGradient id="fabricGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                                    <stop offset="0%" style="stop-color:rgb(255,255,255);stop-opacity:0.4" />
+                                    <stop offset="50%" style="stop-color:rgb(255,255,255);stop-opacity:0" />
+                                    <stop offset="100%" style="stop-color:rgb(0,0,0);stop-opacity:0.1" />
+                                </linearGradient>
+                                
+                                <!-- Textura de tela -->
+                                <pattern id="fabricTexture" x="0" y="0" width="20" height="20" patternUnits="userSpaceOnUse">
+                                    <rect width="20" height="20" fill="white" opacity="0.02"/>
+                                    <path d="M 0 0 L 20 20 M 20 0 L 0 20" stroke="black" stroke-width="0.3" opacity="0.03"/>
+                                </pattern>
+                            </defs>
+                            
+                            <!-- Capa de sombra de la prenda -->
+                            <path id="garment-shadow" d="M 100 80 L 80 60 L 80 100 L 100 120 L 100 450 L 300 450 L 300 120 L 320 100 L 320 60 L 300 80 L 280 80 L 280 60 Q 200 40 120 60 L 120 80 Z"
+                                  fill="black"
+                                  opacity="0.08"
+                                  transform="translate(3, 5)"/>
+                            
+                            <!-- Forma principal de la prenda con efectos 3D -->
+                            <path id="garment-shape" d="M 100 80 L 80 60 L 80 100 L 100 120 L 100 450 L 300 450 L 300 120 L 320 100 L 320 60 L 300 80 L 280 80 L 280 60 Q 200 40 120 60 L 120 80 Z" 
+                                  fill="#ffffff" 
+                                  stroke="#d0d0d0" 
+                                  stroke-width="2"
+                                  filter="url(#shadow3d)"/>
+                            
+                            <!-- Capa de volumen con degradado -->
+                            <path id="garment-volume" d="M 100 80 L 80 60 L 80 100 L 100 120 L 100 450 L 300 450 L 300 120 L 320 100 L 320 60 L 300 80 L 280 80 L 280 60 Q 200 40 120 60 L 120 80 Z" 
+                                  fill="url(#fabricGradient)"
+                                  opacity="0.5"
+                                  pointer-events="none"/>
+                            
+                            <!-- Capa de textura de tela -->
+                            <path id="garment-texture" d="M 100 80 L 80 60 L 80 100 L 100 120 L 100 450 L 300 450 L 300 120 L 320 100 L 320 60 L 300 80 L 280 80 L 280 60 Q 200 40 120 60 L 120 80 Z" 
+                                  fill="url(#fabricTexture)"
+                                  pointer-events="none"/>
+                        </svg>
+                        
+                        <!-- Área de diseño interactiva -->
+                        <div id="design-area" class="absolute inset-0" style="pointer-events: none;">
+                            <!-- Los elementos de diseño se añadirán aquí dinámicamente -->
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="mt-6 text-center">
+                    <p class="text-sm text-gray-600 italic">
+                        Haz clic y arrastra los elementos para moverlos. Usa los controladores para redimensionar y rotar.
+                    </p>
+                </div>
+            </div>
+
+            <!-- Panel de Tiempo de Entrega (Entre canvas y resumen) -->
+            <div id="delivery-time-panel" class="w-full lg:w-64 animate-fade-in-up delay-200 hidden">
+                <div class="bg-white rounded-2xl shadow-xl p-6 border-2 border-gray-100">
+                    <h3 class="text-xl font-bold mb-4 serif text-gray-800">⏱️ Tiempo de Entrega</h3>
+                    
+                    <div class="space-y-3">
+                        <label class="flex items-center p-4 border-2 border-gray-200 rounded-lg cursor-pointer hover:border-orange-400 transition has-[:checked]:border-orange-400 has-[:checked]:bg-orange-50">
+                            <input type="radio" name="delivery-time" value="express" class="custom-radio" onchange="updateSummary()">
+                            <div class="ml-3 flex-1">
+                                <span class="font-semibold block text-gray-800">⚡ Express</span>
+                                <span class="text-sm text-gray-600">3-5 días</span>
+                            </div>
+                            <span class="text-orange-600 font-bold">+$100</span>
+                        </label>
+                        
+                        <label class="flex items-center p-4 border-2 border-gray-200 rounded-lg cursor-pointer hover:border-orange-400 transition has-[:checked]:border-orange-400 has-[:checked]:bg-orange-50">
+                            <input type="radio" name="delivery-time" value="standard" class="custom-radio" checked onchange="updateSummary()">
+                            <div class="ml-3 flex-1">
+                                <span class="font-semibold block text-gray-800">📦 Estándar</span>
+                                <span class="text-sm text-gray-600">7-12 días</span>
+                            </div>
+                            <span class="text-green-600 font-bold">GRATIS</span>
+                        </label>
+                    </div>
+                    
+                    <div class="mt-4 p-3 bg-blue-50 border border-blue-200 rounded-lg text-xs text-blue-800">
+                        <strong>💡 Nota:</strong> El tiempo de entrega se cuenta a partir de la confirmación del pedido.
+                    </div>
+                </div>
+            </div>
+
+            <!-- Panel Derecho: Resumen -->
+            <div id="summary-panel" class="panel-right w-full lg:w-1/4 animate-fade-in-up delay-300 hidden">
+                <div class="summary-card sticky top-8">
+                    <h3 class="text-2xl font-bold mb-6 serif">Resumen</h3>
+                    
+                    <div id="summary-content">
+                        <div class="summary-item">
+                            <span class="text-gray-600">Prenda:</span>
+                            <span id="summary-garment" class="font-semibold">Playera</span>
+                        </div>
+                        <div class="summary-item">
+                            <span class="text-gray-600">Material:</span>
+                            <span id="summary-material" class="font-semibold">Algodón 100%</span>
+                        </div>
+                        <div class="summary-item">
+                            <span class="text-gray-600">Talla:</span>
+                            <span id="summary-size" class="font-semibold">Mediana</span>
+                        </div>
+                        <div class="summary-item">
+                            <span class="text-gray-600">Color:</span>
+                            <span id="summary-color" class="font-semibold">Blanco</span>
+                        </div>
+                        <div class="summary-item">
+                            <span class="text-gray-600">Método:</span>
+                            <span id="summary-method" class="font-semibold">Bordado</span>
+                        </div>
+                        <div class="summary-item">
+                            <span class="text-gray-600">Elementos:</span>
+                            <span id="summary-elements" class="font-semibold">0</span>
+                        </div>
+                        <div class="summary-item">
+                            <span class="text-gray-600">Cantidad:</span>
+                            <span id="summary-quantity" class="font-semibold">1</span>
+                        </div>
+                        <div class="summary-item">
+                            <span class="text-gray-600">Tiempo de Entrega:</span>
+                            <span id="summary-delivery" class="font-semibold">7-12 días</span>
+                        </div>
+                        
+                        <!-- Desglose detallado de costos -->
+                        <div class="mt-4 pt-4 border-t-2 border-gray-200">
+                            <h4 class="font-bold text-sm mb-2 text-gray-700">💰 Desglose de Costos:</h4>
+                            <div id="cost-breakdown" class="space-y-1 text-sm">
+                                <!-- Se llenará dinámicamente -->
+                            </div>
+                        </div>
+                        
+                        <div class="summary-item border-t-2 border-gray-300 pt-4 mt-4">
+                            <span class="text-lg font-bold">Total:</span>
+                            <span id="summary-total" class="text-2xl font-bold text-teal-500 serif">$250.00 MXN</span>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Modal para diseños guardados -->
+    <div id="designs-modal" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center z-50" onclick="closeModal(event)">
+        <div class="bg-white rounded-xl p-8 max-w-4xl w-full mx-4 max-h-[90vh] overflow-y-auto" onclick="event.stopPropagation()">
+            <div class="flex justify-between items-center mb-6">
+                <h2 class="text-3xl font-bold serif">Mis Diseños Guardados</h2>
+                <button onclick="closeModal()" class="text-gray-500 hover:text-gray-700 text-2xl">&times;</button>
+            </div>
+            <div id="saved-designs-list" class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <!-- Los diseños guardados se cargarán aquí -->
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Configuración de Firebase
+        const firebaseConfig = {
+            apiKey: "AIzaSyDemoKey123456789",
+            authDomain: "garment-configurator.firebaseapp.com",
+            projectId: "garment-configurator",
+            storageBucket: "garment-configurator.appspot.com",
+            messagingSenderId: "123456789",
+            appId: "1:123456789:web:abc123def456"
+        };
+
+        // NOTA: Reemplaza con tu configuración real de Firebase
+        // Inicializar Firebase (descomentado cuando tengas credenciales reales)
+        // firebase.initializeApp(firebaseConfig);
+        // const db = firebase.firestore();
+
+        // Estado de la aplicación
+        let appState = {
+            garmentType: 'playera',
+            garmentColor: '#ffffff',
+            garmentColorName: 'Blanco',
+            material: 'algodon',
+            size: 'mediana', // Talla por defecto
+            designMethod: 'bordado',
+            embroidery: {
+                text: '',
+                font: 'serif',
+                position: 'centro-pecho',
+                color: '#000000'
+            },
+            print: {
+                imageData: null,
+                position: 'centro-pecho',
+                size: 'pequeño'
+            },
+            elements: [],
+            selectedElement: null,
+            textColor: '#000000',
+            basePrice: 200, // Precio base en MXN
+            quantity: 1,
+            deliveryTime: 'standard' // standard (7-12 días) o express (3-5 días)
+        };
+
+        // IDs únicos para elementos
+        let elementIdCounter = 0;
+
+        // Inicialización
+        document.addEventListener('DOMContentLoaded', function() {
+            updateSummary();
+            setupDesignAreaInteraction();
+            updateLocationOptions(); // Configurar opciones iniciales de ubicación
+            updateSizeOptions(); // Configurar opciones iniciales de talla
+        });
+
+        // Cambiar entre pestañas
+        function switchTab(tabName) {
+            // Ocultar todos los contenidos
+            document.querySelectorAll('.tab-content').forEach(tab => {
+                tab.classList.add('hidden');
+            });
+            
+            // Remover clase active de todos los botones
+            document.querySelectorAll('.tab-button').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            
+            // Mostrar el contenido seleccionado
+            document.getElementById('tab-' + tabName).classList.remove('hidden');
+            
+            // Activar el botón seleccionado
+            document.querySelector(`[data-tab="${tabName}"]`).classList.add('active');
+
+            // Mostrar/ocultar panel de resumen, canvas y tiempo de entrega según la pestaña
+            const summaryPanel = document.getElementById('summary-panel');
+            const canvasPanel = document.getElementById('canvas-panel');
+            const deliveryTimePanel = document.getElementById('delivery-time-panel');
+            
+            if (tabName === 'producto' || tabName === 'finalizar') {
+                // Páginas 1 y 3: Sin vista previa, sin resumen, sin tiempo de entrega
+                summaryPanel.classList.add('hidden');
+                canvasPanel.classList.add('hidden');
+                deliveryTimePanel.classList.add('hidden');
+            } else if (tabName === 'personalizar') {
+                // Página 2: Con vista previa, resumen Y tiempo de entrega
+                summaryPanel.classList.remove('hidden');
+                canvasPanel.classList.remove('hidden');
+                deliveryTimePanel.classList.remove('hidden');
+                // Cambiar a layout de 3 columnas
+                canvasPanel.classList.remove('lg:w-3/4');
+                canvasPanel.classList.add('lg:w-1/2');
+                updateSummary();
+            } else if (tabName === 'pago') {
+                // Página 4: Solo panel de pago, sin canvas, resumen ni tiempo de entrega
+                summaryPanel.classList.add('hidden');
+                canvasPanel.classList.add('hidden');
+                deliveryTimePanel.classList.add('hidden');
+            }
+        }
+
+        // Alternar entre opciones de bordado e impresión
+        function toggleDesignMethod() {
+            const selectedMethod = document.querySelector('input[name="design-method"]:checked').value;
+            appState.designMethod = selectedMethod;
+            
+            const bordadoOptions = document.getElementById('bordado-options');
+            const impresoOptions = document.getElementById('impreso-options');
+            const textAdicionalSection = document.getElementById('text-adicional-section');
+            const shapeSection = document.getElementById('shape-section');
+            
+            if (selectedMethod === 'bordado') {
+                // BORDADO: Mostrar opciones de bordado, ocultar impreso y extras
+                bordadoOptions.classList.remove('hidden');
+                impresoOptions.classList.add('hidden');
+                textAdicionalSection.classList.add('hidden');
+                shapeSection.classList.add('hidden');
+            } else {
+                // IMPRESO: Ocultar bordado, mostrar impreso y extras
+                bordadoOptions.classList.add('hidden');
+                impresoOptions.classList.remove('hidden');
+                textAdicionalSection.classList.remove('hidden');
+                shapeSection.classList.remove('hidden');
+            }
+            
+            updateConfig();
+        }
+
+        // Seleccionar color de bordado
+        let embroideryColorSwatches = null;
+        function selectEmbroideryColor(color, element) {
+            appState.embroidery.color = color;
+            
+            // Actualizar clase active solo en los swatches de bordado
+            if (!embroideryColorSwatches) {
+                embroideryColorSwatches = document.getElementById('bordado-options').querySelectorAll('.color-swatch');
+            }
+            embroideryColorSwatches.forEach(swatch => {
+                swatch.classList.remove('active');
+            });
+            element.classList.add('active');
+            
+            updateEmbroideryPreview();
+            updateConfig();
+        }
+
+        // Variable para rastrear el elemento de vista previa del bordado
+        let embroideryPreviewElement = null;
+
+        // Función para actualizar la vista previa del bordado en tiempo real
+        function updateEmbroideryPreview() {
+            const text = document.getElementById('embroidery-text').value.trim();
+            const font = document.getElementById('embroidery-font').value;
+            const position = document.getElementById('embroidery-position').value;
+            const color = appState.embroidery.color;
+
+            // Actualizar el estado
+            appState.embroidery.text = text;
+            appState.embroidery.font = font;
+            appState.embroidery.position = position;
+
+            const designArea = document.getElementById('design-area');
+
+            // Si no hay texto, eliminar la vista previa
+            if (!text) {
+                if (embroideryPreviewElement) {
+                    embroideryPreviewElement.remove();
+                    embroideryPreviewElement = null;
+                }
+                return;
+            }
+
+            // Crear o actualizar el elemento de vista previa
+            if (!embroideryPreviewElement) {
+                embroideryPreviewElement = document.createElement('div');
+                embroideryPreviewElement.id = 'embroidery-preview';
+                embroideryPreviewElement.className = 'embroidery-preview-text';
+                embroideryPreviewElement.style.position = 'absolute';
+                embroideryPreviewElement.style.pointerEvents = 'none';
+                embroideryPreviewElement.style.zIndex = '10';
+                designArea.appendChild(embroideryPreviewElement);
+            }
+
+            // Mapear posiciones a coordenadas
+            const positions = {
+                'centro-pecho': { x: '50%', y: '40%', transform: 'translate(-50%, -50%)' },
+                'lado-izquierdo': { x: '25%', y: '40%', transform: 'translate(-50%, -50%)' },
+                'lado-derecho': { x: '75%', y: '40%', transform: 'translate(-50%, -50%)' },
+                'espalda-superior': { x: '50%', y: '25%', transform: 'translate(-50%, -50%)' },
+                'espalda-centro': { x: '50%', y: '50%', transform: 'translate(-50%, -50%)' },
+                'manga-izquierda': { x: '15%', y: '30%', transform: 'translate(-50%, -50%)' },
+                'manga-derecha': { x: '85%', y: '30%', transform: 'translate(-50%, -50%)' },
+                'centro': { x: '50%', y: '50%', transform: 'translate(-50%, -50%)' },
+                'arriba-izquierda': { x: '25%', y: '25%', transform: 'translate(-50%, -50%)' },
+                'arriba-derecha': { x: '75%', y: '25%', transform: 'translate(-50%, -50%)' },
+                'abajo-izquierda': { x: '25%', y: '75%', transform: 'translate(-50%, -50%)' },
+                'abajo-derecha': { x: '75%', y: '75%', transform: 'translate(-50%, -50%)' },
+                'al-frente': { x: '50%', y: '45%', transform: 'translate(-50%, -50%)' },
+                'atras': { x: '50%', y: '55%', transform: 'translate(-50%, -50%)' }
+            };
+
+            const pos = positions[position] || positions['centro-pecho'];
+
+            // Actualizar estilos
+            embroideryPreviewElement.style.left = pos.x;
+            embroideryPreviewElement.style.top = pos.y;
+            embroideryPreviewElement.style.transform = pos.transform;
+            embroideryPreviewElement.style.fontFamily = font;
+            embroideryPreviewElement.style.fontSize = '24px';
+            embroideryPreviewElement.style.fontWeight = '600';
+            embroideryPreviewElement.style.color = color;
+            embroideryPreviewElement.style.textShadow = '1px 1px 2px rgba(0,0,0,0.3)';
+            embroideryPreviewElement.style.whiteSpace = 'nowrap';
+            embroideryPreviewElement.textContent = text;
+        }
+
+        // Toggle dirección de entrega
+        function toggleDeliveryAddress() {
+            const deliveryMethod = document.querySelector('input[name="delivery-method"]:checked').value;
+            const addressSection = document.getElementById('address-section');
+            
+            if (deliveryMethod === 'domicilio') {
+                addressSection.classList.remove('hidden');
+            } else {
+                addressSection.classList.add('hidden');
+            }
+        }
+
+        // Guardar y continuar al pago
+        function saveAndGoToPago() {
+            // Validar campos requeridos
+            const customerName = document.getElementById('customer-name').value.trim();
+            const customerEmail = document.getElementById('customer-email').value.trim();
+            const customerPhone = document.getElementById('customer-phone').value.trim();
+            const designName = document.getElementById('design-name').value.trim();
+            const deliveryMethod = document.querySelector('input[name="delivery-method"]:checked').value;
+            const customerAddress = document.getElementById('customer-address').value.trim();
+
+            if (!customerName || !customerEmail || !customerPhone || !designName) {
+                showToast('Por favor, completa todos los campos requeridos', 'error');
+                return;
+            }
+
+            if (deliveryMethod === 'domicilio' && !customerAddress) {
+                showToast('Por favor, ingresa tu dirección de entrega', 'error');
+                return;
+            }
+
+            // Guardar información del cliente en el estado
+            appState.customerInfo = {
+                name: customerName,
+                email: customerEmail,
+                phone: customerPhone,
+                deliveryMethod: deliveryMethod,
+                address: customerAddress,
+                notes: document.getElementById('notes').value.trim()
+            };
+
+            // Guardar diseño actual
+            saveDesignToFirebase();
+
+            // Ir a la página de pago
+            switchTab('pago');
+            loadPaymentDesigns();
+        }
+
+        // Cargar diseños en la página de pago
+        function loadPaymentDesigns() {
+            const paymentList = document.getElementById('payment-designs-list');
+            
+            try {
+                const savedDesigns = JSON.parse(localStorage.getItem('garmentDesigns') || '[]');
+                
+                if (savedDesigns.length === 0) {
+                    paymentList.innerHTML = '<p class="text-gray-500 text-center py-4">No hay diseños disponibles</p>';
+                    return;
+                }
+                
+                paymentList.innerHTML = savedDesigns.map((design, index) => `
+                    <label class="flex items-center justify-between p-4 border-2 border-gray-200 rounded-lg cursor-pointer hover:border-gray-400 transition">
+                        <div class="flex items-center flex-1">
+                            <input type="radio" name="selected-design" value="${index}" class="custom-radio" ${index === savedDesigns.length - 1 ? 'checked' : ''} onchange="updateFinalSummary(${index})">
+                            <div class="ml-3">
+                                <span class="font-medium block">${design.name}</span>
+                                <span class="text-xs text-gray-500">${design.garmentType} - ${design.garmentColorName} - ${design.quantity} unidad(es)</span>
+                            </div>
+                        </div>
+                        <div class="text-right">
+                            <span class="text-lg font-bold text-amber-600">${design.total}</span>
+                        </div>
+                    </label>
+                `).join('');
+                
+                // Cargar resumen del último diseño por defecto
+                updateFinalSummary(savedDesigns.length - 1);
+            } catch (error) {
+                paymentList.innerHTML = '<p class="text-red-500 text-center py-4">Error al cargar diseños</p>';
+            }
+        }
+
+        // Actualizar resumen final en página de pago
+        function updateFinalSummary(index) {
+            const summaryDiv = document.getElementById('final-order-summary');
+            
+            try {
+                const savedDesigns = JSON.parse(localStorage.getItem('garmentDesigns') || '[]');
+                const design = savedDesigns[index];
+                const customerInfo = appState.customerInfo || {};
+                
+                summaryDiv.innerHTML = `
+                    <p class="mb-1"><strong>Cliente:</strong> ${customerInfo.name || 'No especificado'}</p>
+                    <p class="mb-1"><strong>Correo:</strong> ${customerInfo.email || 'No especificado'}</p>
+                    <p class="mb-1"><strong>Teléfono:</strong> ${customerInfo.phone || 'No especificado'}</p>
+                    <p class="mb-1"><strong>Entrega:</strong> ${customerInfo.deliveryMethod === 'domicilio' ? '🚚 Envío a Domicilio' : '🏪 Recoger en Tienda'}</p>
+                    ${customerInfo.deliveryMethod === 'domicilio' ? `<p class="mb-1"><strong>Dirección:</strong> ${customerInfo.address}</p>` : ''}
+                    <hr class="my-2 border-amber-300">
+                    <p class="mb-1"><strong>Diseño:</strong> ${design.name}</p>
+                    <p class="mb-1"><strong>Prenda:</strong> ${design.garmentType} - ${design.material}</p>
+                    <p class="mb-1"><strong>Cantidad:</strong> ${design.quantity}</p>
+                    <p class="mt-2 text-lg"><strong>Total a Pagar:</strong> <span class="text-amber-600 font-bold">${design.total}</span></p>
+                `;
+            } catch (error) {
+                summaryDiv.innerHTML = '<p class="text-red-500">Error al cargar el resumen</p>';
+            }
+        }
+
+        // Confirmar pedido
+        function confirmOrder() {
+            const paymentMethod = document.querySelector('input[name="payment-method"]:checked')?.value;
+            
+            if (!paymentMethod) {
+                showToast('Por favor, selecciona un método de pago', 'error');
+                return;
+            }
+            
+            // Generar número de pedido único
+            const orderNumber = 'ONYOU-' + Date.now().toString().slice(-6);
+            
+            const paymentNames = {
+                'tarjeta': 'Tarjeta de Crédito/Débito',
+                'oxxo': 'OXXO',
+                'transferencia': 'Transferencia Bancaria',
+                'efectivo': 'Efectivo'
+            };
+            
+            // Mostrar mensaje personalizado
+            const mensaje = `✅ ¡Listo! Tu número de pedido es #${orderNumber}
+
+Acércate con nuestro personal en la caja y realiza tu pago con: ${paymentNames[paymentMethod]}
+
+Las indicaciones para la recolección se te proporcionarán vía email.
+
+¡Gracias por elegir ONYOU!
+"Fit as you WISH"`;
+            
+            alert(mensaje);
+            showToast(`Pedido #${orderNumber} confirmado`, 'success');
+            
+            // Preguntar si desea crear nuevo diseño
+            setTimeout(() => {
+                if (confirm('¿Deseas crear un nuevo diseño?')) {
+                    location.reload();
+                }
+            }, 2000);
+        }
+        function handleImageUpload(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+            
+            // Verificar que sea una imagen
+            if (!file.type.startsWith('image/')) {
+                showToast('Por favor, selecciona un archivo de imagen válido', 'error');
+                return;
+            }
+            
+            // Verificar tamaño (máximo 5MB)
+            if (file.size > 5 * 1024 * 1024) {
+                showToast('La imagen es demasiado grande. Máximo 5MB', 'error');
+                return;
+            }
+            
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const imageData = e.target.result;
+                appState.print.imageData = imageData;
+                
+                // Mostrar vista previa
+                const previewImg = document.getElementById('preview-img');
+                const previewContainer = document.getElementById('image-preview');
+                previewImg.src = imageData;
+                previewContainer.classList.remove('hidden');
+                
+                // NUEVO: Agregar imagen directamente al canvas del producto
+                const designArea = document.getElementById('design-area');
+                
+                // Limpiar imágenes de impresión anteriores
+                const oldPrintImages = designArea.querySelectorAll('.print-image-element');
+                oldPrintImages.forEach(img => img.remove());
+                
+                // Crear elemento de imagen en el canvas
+                const imgElement = document.createElement('img');
+                imgElement.src = imageData;
+                imgElement.className = 'print-image-element';
+                imgElement.style.position = 'absolute';
+                imgElement.style.left = '50%';
+                imgElement.style.top = '40%';
+                imgElement.style.transform = 'translate(-50%, -50%)';
+                imgElement.style.width = '150px';
+                imgElement.style.height = 'auto';
+                imgElement.style.cursor = 'move';
+                imgElement.style.pointerEvents = 'auto';
+                imgElement.style.filter = 'drop-shadow(2px 2px 4px rgba(0,0,0,0.3))';
+                imgElement.style.zIndex = '10';
+                imgElement.style.userSelect = 'none';
+                
+                // Sistema simple de arrastre
+                let isDragging = false;
+                let startX, startY, initialLeft, initialTop;
+                
+                imgElement.addEventListener('mousedown', function(e) {
+                    isDragging = true;
+                    startX = e.clientX;
+                    startY = e.clientY;
+                    
+                    // Obtener posición actual
+                    const rect = imgElement.getBoundingClientRect();
+                    const parentRect = designArea.getBoundingClientRect();
+                    initialLeft = rect.left - parentRect.left;
+                    initialTop = rect.top - parentRect.top;
+                    
+                    imgElement.style.transform = 'none'; // Remover transform durante arrastre
+                    e.preventDefault();
+                });
+                
+                document.addEventListener('mousemove', function(e) {
+                    if (!isDragging) return;
+                    
+                    const dx = e.clientX - startX;
+                    const dy = e.clientY - startY;
+                    
+                    imgElement.style.left = (initialLeft + dx) + 'px';
+                    imgElement.style.top = (initialTop + dy) + 'px';
+                });
+                
+                document.addEventListener('mouseup', function() {
+                    isDragging = false;
+                });
+                
+                designArea.appendChild(imgElement);
+                
+                showToast('Imagen cargada y agregada al diseño');
+                updateConfig();
+            };
+            reader.readAsDataURL(file);
+        }
+
+        // Actualizar prenda
+        function updateGarment() {
+            const selectedGarment = document.querySelector('input[name="garment-type"]:checked').value;
+            appState.garmentType = selectedGarment;
+            
+            // Actualizar forma SVG según tipo de prenda - VERSIONES ULTRA REALISTAS
+            const garmentShape = document.getElementById('garment-shape');
+            let pathData = '';
+            
+            if (selectedGarment === 'playera') {
+                // PLAYERA ULTRA REALISTA: con cuello redondo pronunciado, mangas cortas visibles y forma anatómica
+                pathData = 'M 200 55 Q 195 52 190 52 Q 180 52 175 58 L 170 65 Q 165 72 160 80 L 150 95 Q 145 105 140 115 L 135 130 L 130 145 L 130 160 L 135 175 L 135 400 Q 135 415 145 420 L 155 425 Q 165 428 175 428 L 225 428 Q 235 428 245 425 L 255 420 Q 265 415 265 400 L 265 175 L 270 160 L 270 145 L 265 130 L 260 115 Q 255 105 250 95 L 240 80 Q 235 72 230 65 L 225 58 Q 220 52 210 52 Q 205 52 200 55 Z M 200 60 L 195 65 Q 190 70 185 75 L 182 82 L 190 85 L 200 82 L 210 85 L 218 82 L 215 75 Q 210 70 205 65 L 200 60 Z M 130 95 L 115 110 L 110 125 L 110 150 L 115 155 L 130 160 Z M 270 95 L 285 110 L 290 125 L 290 150 L 285 155 L 270 160 Z';
+                appState.basePrice = 200;
+            } else if (selectedGarment === 'sudadera') {
+                // SUDADERA ULTRA REALISTA: con capucha grande visible, bolsillo canguro y mangas largas completas
+                pathData = 'M 200 35 Q 190 32 180 33 L 170 36 Q 165 40 162 46 L 158 54 Q 156 62 155 70 L 152 80 L 148 90 Q 145 98 142 106 L 138 116 Q 135 124 132 132 L 128 145 Q 125 155 123 165 L 120 180 L 118 200 L 120 210 L 125 218 L 132 222 L 132 460 Q 132 472 142 478 L 152 484 Q 162 488 172 488 L 228 488 Q 238 488 248 484 L 258 478 Q 268 472 268 460 L 268 222 L 275 218 L 280 210 L 282 200 L 280 180 Q 278 165 275 155 L 272 145 Q 269 132 266 124 L 262 116 Q 258 98 255 90 L 252 80 L 248 70 Q 247 62 244 54 L 240 46 Q 237 40 232 36 L 222 33 Q 212 32 200 35 Z M 200 42 Q 195 40 190 41 L 185 44 Q 182 48 180 54 L 178 62 L 185 68 L 200 72 L 215 68 L 222 62 L 220 54 Q 218 48 215 44 L 210 41 Q 205 40 200 42 Z M 125 90 L 108 108 L 100 125 L 98 145 L 98 210 L 102 220 L 110 228 L 120 232 L 125 220 Z M 275 90 L 292 108 L 300 125 L 302 145 L 302 210 L 298 220 L 290 228 L 280 232 L 275 220 Z M 165 260 L 165 310 Q 165 318 170 322 L 180 328 L 220 328 L 230 322 Q 235 318 235 310 L 235 260 Q 235 252 230 248 L 220 242 L 180 242 L 170 248 Q 165 252 165 260 Z';
+                appState.basePrice = 500;
+            } else if (selectedGarment === 'cobija') {
+                // COBIJA REALISTA: con textura y bordes decorativos
+                pathData = 'M 65 115 Q 62 112 60 110 L 60 440 Q 62 443 65 446 L 75 450 L 325 450 L 335 446 Q 338 443 340 440 L 340 110 Q 338 112 335 115 L 325 120 L 75 120 Z M 70 125 L 70 440 L 330 440 L 330 125 Z M 80 135 L 80 145 L 90 145 L 90 135 Z M 310 135 L 310 145 L 320 145 L 320 135 Z M 80 425 L 80 435 L 90 435 L 90 425 Z M 310 425 L 310 435 L 320 435 L 320 425 Z';
+                appState.basePrice = 400;
+            } else if (selectedGarment === 'gorra') {
+                // GORRA ULTRA REALISTA: con paneles visibles, visera curva pronunciada y detalles de costura
+                pathData = 'M 200 118 Q 185 115 172 118 L 162 122 Q 155 126 150 132 L 145 140 Q 142 148 140 157 L 138 168 Q 138 178 140 187 L 143 196 Q 146 203 151 208 L 158 214 L 168 219 L 180 222 L 220 222 L 232 219 L 242 214 L 249 208 Q 254 203 257 196 L 260 187 Q 262 178 262 168 L 260 157 Q 258 148 255 140 L 250 132 Q 245 126 238 122 L 228 118 Q 215 115 200 118 Z M 200 125 L 180 142 L 183 155 L 195 162 L 200 160 L 205 162 L 217 155 L 220 142 L 200 125 Z M 90 220 Q 87 221 85 223 L 82 227 Q 80 232 80 237 L 80 248 Q 81 253 83 257 L 86 261 Q 89 263 93 264 L 307 264 Q 311 263 314 261 L 317 257 Q 319 253 320 248 L 320 237 Q 319 232 317 227 L 314 223 Q 312 221 310 220 L 305 218 L 95 218 Z M 95 225 L 95 257 L 305 257 L 305 225 Z';
+                appState.basePrice = 150;
+            }
+            
+            // Actualizar todas las capas del SVG con la nueva forma
+            garmentShape.setAttribute('d', pathData);
+            
+            // Actualizar capas adicionales (sombra, volumen, textura)
+            if (document.getElementById('garment-shadow')) {
+                document.getElementById('garment-shadow').setAttribute('d', pathData);
+            }
+            if (document.getElementById('garment-volume')) {
+                document.getElementById('garment-volume').setAttribute('d', pathData);
+            }
+            if (document.getElementById('garment-texture')) {
+                document.getElementById('garment-texture').setAttribute('d', pathData);
+            }
+            
+            // Actualizar opciones de ubicación según el tipo de prenda
+            updateLocationOptions();
+            
+            // Actualizar opciones de talla según el tipo de prenda
+            updateSizeOptions();
+            
+            // Actualizar opciones de material con precios
+            updateMaterialOptions();
+            
+            updateSummary();
+        }
+
+        // Función para actualizar las opciones de talla según el tipo de prenda
+        function updateSizeOptions() {
+            const garmentType = appState.garmentType;
+            const sizeSelector = document.getElementById('size-selector');
+            
+            let sizeOptions = [];
+            
+            if (garmentType === 'cobija') {
+                sizeOptions = [
+                    { value: 'king', text: '🛏️ Cobija Extra Grande (King Size)', description: '200 x 220 cm' },
+                    { value: 'queen', text: '🛏️ Cobija Grande (Queen Size)', description: '180 x 200 cm' },
+                    { value: 'matrimonial', text: '🛏️ Cobija Mediana (Matrimonial)', description: '150 x 190 cm' },
+                    { value: 'individual', text: '🛏️ Cobija Chica (Individual)', description: '90 x 190 cm' }
+                ];
+            } else {
+                // Para playera, sudadera y gorra
+                sizeOptions = [
+                    { value: 'chica', text: '👕 Talla Chica', description: 'S' },
+                    { value: 'mediana', text: '👕 Talla Mediana', description: 'M' },
+                    { value: 'grande', text: '👕 Talla Grande', description: 'L' }
+                ];
+            }
+            
+            // Crear los botones de radio para las tallas
+            sizeSelector.innerHTML = sizeOptions.map((opt, index) => `
+                <label class="flex items-center justify-between p-4 border-2 border-gray-200 rounded-lg cursor-pointer hover:border-gray-300 transition mb-3">
+                    <div class="flex items-center flex-1">
+                        <input type="radio" name="garment-size" value="${opt.value}" class="custom-radio" ${index === 0 ? 'checked' : ''} onchange="updateSize('${opt.value}')">
+                        <div class="ml-3">
+                            <span class="font-medium block">${opt.text}</span>
+                            <span class="text-xs text-gray-500">${opt.description}</span>
+                        </div>
+                    </div>
+                </label>
+            `).join('');
+            
+            // Establecer la primera opción como seleccionada
+            appState.size = sizeOptions[0].value;
+        }
+
+        // Función para actualizar la talla seleccionada
+        function updateSize(size) {
+            appState.size = size;
+            updateSummary();
+        }
+
+        // Función para actualizar las opciones de ubicación según el tipo de prenda
+        function updateLocationOptions() {
+            const garmentType = appState.garmentType;
+            const embroideryPosition = document.getElementById('embroidery-position');
+            const printPosition = document.getElementById('print-position');
+            const locationMessage = document.getElementById('location-message');
+            const printLocationMessage = document.getElementById('print-location-message');
+            
+            let options = [];
+            let infoMessage = '';
+            
+            if (garmentType === 'cobija') {
+                options = [
+                    { value: 'centro', text: '⭐ Al Centro' },
+                    { value: 'arriba-izquierda', text: '↖️ Arriba a la Izquierda' },
+                    { value: 'arriba-derecha', text: '↗️ Arriba a la Derecha' },
+                    { value: 'abajo-izquierda', text: '↙️ Abajo a la Izquierda' },
+                    { value: 'abajo-derecha', text: '↘️ Abajo a la Derecha' }
+                ];
+                infoMessage = '🛏️ Elige la posición en tu cobija personalizada';
+            } else if (garmentType === 'gorra') {
+                options = [
+                    { value: 'al-frente', text: '👉 Al Frente' },
+                    { value: 'atras', text: '👈 Atrás' },
+                    { value: 'lado-derecho', text: '➡️ Lado Derecho' },
+                    { value: 'lado-izquierdo', text: '⬅️ Lado Izquierdo' }
+                ];
+                infoMessage = '🧢 Selecciona en qué parte de la gorra quieres el diseño';
+            } else if (garmentType === 'sudadera') {
+                options = [
+                    { value: 'centro-pecho', text: '⭐ Centro del Pecho' },
+                    { value: 'lado-izquierdo', text: '⬅️ Lado Izquierdo' },
+                    { value: 'lado-derecho', text: '➡️ Lado Derecho' },
+                    { value: 'espalda-superior', text: '🔝 Espalda Superior' },
+                    { value: 'espalda-centro', text: '🎯 Espalda Centro' },
+                    { value: 'manga-izquierda', text: '💪 Manga Izquierda' },
+                    { value: 'manga-derecha', text: '💪 Manga Derecha' }
+                ];
+                infoMessage = '👕 Selecciona dónde quieres que aparezca en tu sudadera';
+            } else {
+                // Playera
+                options = [
+                    { value: 'centro-pecho', text: '⭐ Centro del Pecho' },
+                    { value: 'lado-izquierdo', text: '⬅️ Lado Izquierdo' },
+                    { value: 'lado-derecho', text: '➡️ Lado Derecho' },
+                    { value: 'espalda-superior', text: '🔝 Espalda Superior' },
+                    { value: 'espalda-centro', text: '🎯 Espalda Centro' },
+                    { value: 'manga-izquierda', text: '💪 Manga Izquierda' },
+                    { value: 'manga-derecha', text: '💪 Manga Derecha' }
+                ];
+                infoMessage = '👕 Selecciona dónde quieres que aparezca en tu playera';
+            }
+            
+            // Actualizar mensajes informativos
+            if (locationMessage) {
+                locationMessage.textContent = '📍 ' + infoMessage;
+            }
+            if (printLocationMessage) {
+                printLocationMessage.textContent = '📍 ' + infoMessage;
+            }
+            
+            // Actualizar opciones de bordado
+            if (embroideryPosition) {
+                const currentValue = embroideryPosition.value;
+                embroideryPosition.innerHTML = options.map(opt => 
+                    `<option value="${opt.value}">${opt.text}</option>`
+                ).join('');
+                
+                // Intentar mantener el valor actual si existe en las nuevas opciones
+                const valueExists = options.some(opt => opt.value === currentValue);
+                if (valueExists) {
+                    embroideryPosition.value = currentValue;
+                }
+            }
+            
+            // Actualizar opciones de impresión
+            if (printPosition) {
+                const currentValue = printPosition.value;
+                
+                // Para impresión, agregar opciones adicionales específicas si no es gorra ni cobija
+                let printOptions = [...options];
+                if (garmentType === 'playera' || garmentType === 'sudadera') {
+                    printOptions.splice(3, 0, { value: 'espalda-completa', text: '📐 Espalda Completa' });
+                }
+                
+                printPosition.innerHTML = printOptions.map(opt => 
+                    `<option value="${opt.value}">${opt.text}</option>`
+                ).join('');
+                
+                // Intentar mantener el valor actual si existe en las nuevas opciones
+                const valueExists = printOptions.some(opt => opt.value === currentValue);
+                if (valueExists) {
+                    printPosition.value = currentValue;
+                }
+            }
+        }
+
+        // Seleccionar color de prenda
+        function selectGarmentColor(color, element) {
+            appState.garmentColor = color;
+            document.getElementById('garment-shape').setAttribute('fill', color);
+            
+            // Actualizar también las capas adicionales (sombra, volumen, textura)
+            if (document.getElementById('garment-shadow')) {
+                document.getElementById('garment-shadow').setAttribute('d', document.getElementById('garment-shape').getAttribute('d'));
+            }
+            if (document.getElementById('garment-volume')) {
+                document.getElementById('garment-volume').setAttribute('d', document.getElementById('garment-shape').getAttribute('d'));
+            }
+            if (document.getElementById('garment-texture')) {
+                document.getElementById('garment-texture').setAttribute('d', document.getElementById('garment-shape').getAttribute('d'));
+            }
+            
+            // Actualizar clase active
+            document.querySelectorAll('.color-swatch').forEach(swatch => {
+                swatch.classList.remove('active');
+            });
+            element.classList.add('active');
+            
+            // Determinar nombre del color para el resumen
+            const colorNames = {
+                '#ffffff': 'Blanco',
+                '#000000': 'Negro',
+                '#1e3a8a': 'Azul Marino',
+                '#991b1b': 'Rojo Oscuro',
+                '#047857': 'Verde Esmeralda',
+                '#7c2d12': 'Marrón',
+                '#4c1d95': 'Púrpura',
+                '#be123c': 'Rosa',
+                '#ea580c': 'Naranja',
+                '#facc15': 'Amarillo'
+            };
+            appState.garmentColorName = colorNames[color] || 'Personalizado';
+            
+            updateSummary();
+        }
+
+        // Actualizar configuración
+        function updateConfig() {
+            appState.material = document.getElementById('material-select').value;
+            updateSummary();
+        }
+
+        // Seleccionar color de texto
+        let currentTextColor = '#000000';
+        function selectTextColor(color) {
+            currentTextColor = color;
+        }
+
+        // Toggle para texto adicional
+        function toggleAdditionalText(showText) {
+            const textOptions = document.getElementById('additional-text-options');
+            const shapeSection = document.getElementById('shape-section');
+            const btnTextSi = document.getElementById('btn-text-si');
+            const btnTextNo = document.getElementById('btn-text-no');
+            const viewMessage = document.getElementById('view-design-message');
+            
+            // Actualizar estilos de botones
+            if (showText) {
+                btnTextSi.classList.add('active');
+                btnTextNo.classList.remove('active');
+                textOptions.classList.remove('hidden');
+                shapeSection.classList.add('hidden');
+                viewMessage.classList.add('hidden');
+            } else {
+                btnTextSi.classList.remove('active');
+                btnTextNo.classList.add('active');
+                textOptions.classList.add('hidden');
+                shapeSection.classList.remove('hidden');
+                viewMessage.classList.add('hidden');
+            }
+        }
+
+        // Toggle para opciones de formas
+        function toggleShapeOptions(showShapes) {
+            const shapeOptions = document.getElementById('shape-options');
+            const btnShapeSi = document.getElementById('btn-shape-si');
+            const btnShapeNo = document.getElementById('btn-shape-no');
+            const viewMessage = document.getElementById('view-design-message');
+            
+            // Actualizar estilos de botones
+            if (showShapes) {
+                btnShapeSi.classList.add('active');
+                btnShapeNo.classList.remove('active');
+                shapeOptions.classList.remove('hidden');
+                viewMessage.classList.add('hidden');
+            } else {
+                btnShapeSi.classList.remove('active');
+                btnShapeNo.classList.add('active');
+                shapeOptions.classList.add('hidden');
+                viewMessage.classList.remove('hidden');
+            }
+        }
+
+        // Añadir texto
+        function addText() {
+            const textInput = document.getElementById('text-input');
+            const fontSelect = document.getElementById('font-select');
+            const text = textInput.value.trim();
+            
+            if (!text) {
+                showToast('Por favor, escribe un texto primero', 'error');
+                return;
+            }
+            
+            const element = {
+                id: ++elementIdCounter,
+                type: 'text',
+                content: text,
+                font: fontSelect.value,
+                color: currentTextColor,
+                x: 200,
+                y: 250,
+                rotation: 0,
+                scale: 1,
+                fontSize: 32
+            };
+            
+            console.log('Añadiendo texto:', element); // Debug
+            
+            appState.elements.push(element);
+            renderElement(element);
+            textInput.value = '';
+            updateSummary();
+            showToast('Texto añadido correctamente');
+        }
+
+        // Añadir forma
+        function addShape(shapeType) {
+            const element = {
+                id: ++elementIdCounter,
+                type: 'shape',
+                shapeType: shapeType,
+                color: currentTextColor,
+                x: 200,
+                y: 250,
+                rotation: 0,
+                scale: 1,
+                size: 60
+            };
+            
+            appState.elements.push(element);
+            renderElement(element);
+            updateSummary();
+            showToast('Forma añadida correctamente');
+        }
+
+        // Renderizar elemento en el canvas
+        function renderElement(element) {
+            const designArea = document.getElementById('design-area');
+            
+            if (!designArea) {
+                console.error('ERROR: design-area no encontrado');
+                showToast('Error: Área de diseño no encontrada', 'error');
+                return;
+            }
+            
+            console.log('Renderizando elemento en design-area:', element); // Debug
+            
+            const div = document.createElement('div');
+            div.className = 'design-element';
+            div.id = 'element-' + element.id;
+            div.style.pointerEvents = 'auto';
+            
+            if (element.type === 'text') {
+                div.innerHTML = `
+                    <div style="
+                        font-family: ${element.font};
+                        font-size: ${element.fontSize}px;
+                        color: ${element.color};
+                        white-space: nowrap;
+                        user-select: none;
+                        text-shadow: 1px 1px 2px rgba(0,0,0,0.1);
+                    ">${element.content}</div>
+                    <div class="resize-handle"></div>
+                    <div class="rotate-handle"></div>
+                `;
+            } else if (element.type === 'shape') {
+                let shapeHTML = '';
+                if (element.shapeType === 'circle') {
+                    shapeHTML = `<div style="width: ${element.size}px; height: ${element.size}px; background: ${element.color}; border-radius: 50%;"></div>`;
+                } else if (element.shapeType === 'square') {
+                    shapeHTML = `<div style="width: ${element.size}px; height: ${element.size}px; background: ${element.color};"></div>`;
+                } else if (element.shapeType === 'triangle') {
+                    shapeHTML = `<div style="width: 0; height: 0; border-left: ${element.size/2}px solid transparent; border-right: ${element.size/2}px solid transparent; border-bottom: ${element.size}px solid ${element.color};"></div>`;
+                }
+                div.innerHTML = shapeHTML + '<div class="resize-handle"></div><div class="rotate-handle"></div>';
+            }
+            
+            updateElementTransform(div, element);
+            designArea.appendChild(div);
+            
+            console.log('Elemento agregado al DOM, total elementos:', designArea.children.length); // Debug
+            
+            // Añadir eventos de interacción
+            makeElementDraggable(div, element);
+            makeElementResizable(div, element);
+            makeElementRotatable(div, element);
+            
+            div.addEventListener('click', function(e) {
+                e.stopPropagation();
+                selectElement(element.id);
+            });
+        }
+
+        // Actualizar transformación de elemento
+        function updateElementTransform(div, element) {
+            div.style.left = element.x + 'px';
+            div.style.top = element.y + 'px';
+            div.style.transform = `rotate(${element.rotation}deg) scale(${element.scale})`;
+        }
+
+        // Hacer elemento arrastrable
+        function makeElementDraggable(div, element) {
+            let isDragging = false;
+            let startX, startY, initialX, initialY;
+            
+            div.addEventListener('mousedown', function(e) {
+                if (e.target.classList.contains('resize-handle') || e.target.classList.contains('rotate-handle')) {
+                    return;
+                }
+                isDragging = true;
+                startX = e.clientX;
+                startY = e.clientY;
+                initialX = element.x;
+                initialY = element.y;
+                e.preventDefault();
+            });
+            
+            document.addEventListener('mousemove', function(e) {
+                if (!isDragging) return;
+                
+                const dx = e.clientX - startX;
+                const dy = e.clientY - startY;
+                element.x = initialX + dx;
+                element.y = initialY + dy;
+                updateElementTransform(div, element);
+            });
+            
+            document.addEventListener('mouseup', function() {
+                isDragging = false;
+            });
+        }
+
+        // Hacer elemento redimensionable
+        function makeElementResizable(div, element) {
+            const handle = div.querySelector('.resize-handle');
+            if (!handle) return;
+            
+            let isResizing = false;
+            let startX, startY, initialScale;
+            
+            handle.addEventListener('mousedown', function(e) {
+                isResizing = true;
+                startX = e.clientX;
+                startY = e.clientY;
+                initialScale = element.scale;
+                e.stopPropagation();
+                e.preventDefault();
+            });
+            
+            document.addEventListener('mousemove', function(e) {
+                if (!isResizing) return;
+                
+                const dx = e.clientX - startX;
+                const scaleFactor = 1 + (dx / 100);
+                element.scale = Math.max(0.3, Math.min(3, initialScale * scaleFactor));
+                updateElementTransform(div, element);
+            });
+            
+            document.addEventListener('mouseup', function() {
+                isResizing = false;
+            });
+        }
+
+        // Hacer elemento rotable
+        function makeElementRotatable(div, element) {
+            const handle = div.querySelector('.rotate-handle');
+            if (!handle) return;
+            
+            let isRotating = false;
+            let startAngle;
+            
+            handle.addEventListener('mousedown', function(e) {
+                isRotating = true;
+                const rect = div.getBoundingClientRect();
+                const centerX = rect.left + rect.width / 2;
+                const centerY = rect.top + rect.height / 2;
+                startAngle = Math.atan2(e.clientY - centerY, e.clientX - centerX) * 180 / Math.PI;
+                e.stopPropagation();
+                e.preventDefault();
+            });
+            
+            document.addEventListener('mousemove', function(e) {
+                if (!isRotating) return;
+                
+                const rect = div.getBoundingClientRect();
+                const centerX = rect.left + rect.width / 2;
+                const centerY = rect.top + rect.height / 2;
+                const currentAngle = Math.atan2(e.clientY - centerY, e.clientX - centerX) * 180 / Math.PI;
+                element.rotation = currentAngle - startAngle;
+                updateElementTransform(div, element);
+            });
+            
+            document.addEventListener('mouseup', function() {
+                isRotating = false;
+            });
+        }
+
+        // Seleccionar elemento
+        function selectElement(id) {
+            // Deseleccionar todos
+            document.querySelectorAll('.design-element').forEach(el => {
+                el.classList.remove('selected');
+            });
+            
+            // Seleccionar el elemento
+            const element = document.getElementById('element-' + id);
+            if (element) {
+                element.classList.add('selected');
+                appState.selectedElement = id;
+                document.getElementById('element-controls').classList.remove('hidden');
+            }
+        }
+
+        // Configurar interacción del área de diseño
+        function setupDesignAreaInteraction() {
+            const designArea = document.getElementById('design-area');
+            designArea.addEventListener('click', function(e) {
+                if (e.target === designArea) {
+                    // Deseleccionar todos
+                    document.querySelectorAll('.design-element').forEach(el => {
+                        el.classList.remove('selected');
+                    });
+                    appState.selectedElement = null;
+                    document.getElementById('element-controls').classList.add('hidden');
+                }
+            });
+        }
+
+        // Eliminar elemento seleccionado
+        function deleteSelectedElement() {
+            if (!appState.selectedElement) return;
+            
+            const element = document.getElementById('element-' + appState.selectedElement);
+            if (element) {
+                element.remove();
+                appState.elements = appState.elements.filter(e => e.id !== appState.selectedElement);
+                appState.selectedElement = null;
+                document.getElementById('element-controls').classList.add('hidden');
+                updateSummary();
+                showToast('Elemento eliminado');
+            }
+        }
+
+        // Duplicar elemento seleccionado
+        function duplicateSelectedElement() {
+            if (!appState.selectedElement) return;
+            
+            const originalElement = appState.elements.find(e => e.id === appState.selectedElement);
+            if (originalElement) {
+                const newElement = { ...originalElement, id: ++elementIdCounter, x: originalElement.x + 20, y: originalElement.y + 20 };
+                appState.elements.push(newElement);
+                renderElement(newElement);
+                updateSummary();
+                showToast('Elemento duplicado');
+            }
+        }
+
+        // Actualizar resumen
+        function updateSummary() {
+            const garmentNames = {
+                'playera': 'Playera',
+                'sudadera': 'Sudadera',
+                'cobija': 'Cobija',
+                'gorra': 'Gorra'
+            };
+            
+            const materialNames = {
+                'algodon': 'Algodón 100%',
+                'poliester': 'Poliéster Premium',
+                'mezcla': 'Mezcla Algodón/Poliéster'
+            };
+
+            const methodNames = {
+                'bordado': '🧵 Bordado',
+                'impreso': '🖨️ Impreso'
+            };
+
+            const sizeNames = {
+                // Prendas de vestir
+                'chica': 'Chica (S)',
+                'mediana': 'Mediana (M)',
+                'grande': 'Grande (L)',
+                // Cobijas
+                'king': 'Extra Grande (King)',
+                'queen': 'Grande (Queen)',
+                'matrimonial': 'Mediana (Matrimonial)',
+                'individual': 'Chica (Individual)'
+            };
+            
+            document.getElementById('summary-garment').textContent = garmentNames[appState.garmentType];
+            document.getElementById('summary-material').textContent = materialNames[appState.material];
+            document.getElementById('summary-size').textContent = sizeNames[appState.size] || 'Mediana (M)';
+            document.getElementById('summary-color').textContent = appState.garmentColorName;
+            document.getElementById('summary-method').textContent = methodNames[appState.designMethod];
+            document.getElementById('summary-elements').textContent = appState.elements.length;
+            
+            const quantity = parseInt(document.getElementById('quantity')?.value || 1);
+            appState.quantity = quantity;
+            document.getElementById('summary-quantity').textContent = quantity;
+            
+            // Calcular precio en MXN CON DESGLOSE DETALLADO
+            let costBreakdown = []; // Array para el desglose
+            let price = 0;
+            
+            // Precio base según tipo de prenda
+            let basePrice = 0;
+            if (appState.garmentType === 'sudadera') {
+                basePrice = 500;
+            } else if (appState.garmentType === 'cobija') {
+                basePrice = 400;
+            } else if (appState.garmentType === 'gorra') {
+                basePrice = 150;
+            } else {
+                basePrice = 200; // Playera
+            }
+            price += basePrice;
+            costBreakdown.push(`${garmentNames[appState.garmentType]}: $${basePrice} MXN`);
+            
+            // Costo adicional por material
+            let materialCost = 0;
+            if (appState.garmentType === 'playera') {
+                if (appState.material === 'algodon') materialCost = 50;
+                if (appState.material === 'mezcla') materialCost = 25;
+            } else if (appState.garmentType === 'sudadera') {
+                if (appState.material === 'algodon') materialCost = 75;
+                if (appState.material === 'mezcla') materialCost = 35;
+            } else if (appState.garmentType === 'gorra') {
+                if (appState.material === 'algodon') materialCost = 25;
+                if (appState.material === 'mezcla') materialCost = 10;
+            } else if (appState.garmentType === 'cobija') {
+                if (appState.material === 'algodon') materialCost = 50;
+                if (appState.material === 'mezcla') materialCost = 25;
+            }
+            if (materialCost > 0) {
+                price += materialCost;
+                costBreakdown.push(`${materialNames[appState.material]}: +$${materialCost} MXN`);
+            } else if (appState.material === 'poliester') {
+                costBreakdown.push(`${materialNames[appState.material]}: Sin costo`);
+            }
+            
+            // Costo por método de diseño
+            if (appState.designMethod === 'bordado') {
+                price += 150;
+                costBreakdown.push(`Bordado: +$150 MXN`);
+                
+                // Costo por caracteres adicionales
+                const textLength = appState.embroidery.text.length;
+                if (textLength > 20) {
+                    const extraChars = textLength - 20;
+                    const extraCost = extraChars * 5;
+                    price += extraCost;
+                    costBreakdown.push(`  └ ${extraChars} caracteres extras: +$${extraCost} MXN`);
+                } else if (textLength > 0) {
+                    costBreakdown.push(`  └ ${textLength} caracteres (incluidos)`);
+                }
+            } else if (appState.designMethod === 'impreso' && appState.print.imageData) {
+                price += 100;
+                costBreakdown.push(`Impresión: +$100 MXN`);
+                
+                // Costo por tamaño de impresión
+                const printSize = document.getElementById('print-size')?.value || 'mediano';
+                if (printSize === 'mediano') {
+                    price += 50;
+                    costBreakdown.push(`  └ Tamaño mediano: +$50 MXN`);
+                } else if (printSize === 'grande' || printSize === 'extra-grande') {
+                    price += 100;
+                    costBreakdown.push(`  └ Tamaño grande: +$100 MXN`);
+                } else {
+                    costBreakdown.push(`  └ Tamaño pequeño (incluido)`);
+                }
+            }
+            
+            // Costo por texto adicional (solo en impreso)
+            if (appState.designMethod === 'impreso' && appState.elements.length > 0) {
+                appState.elements.forEach((element, index) => {
+                    if (element.type === 'text') {
+                        const textLength = element.content.length;
+                        let textCost = 0;
+                        
+                        if (textLength <= 20) {
+                            // Primeros 20 caracteres: $10 MXN
+                            textCost = 10;
+                            costBreakdown.push(`Texto adicional #${index + 1}: +$10 MXN`);
+                            costBreakdown.push(`  └ ${textLength} caracteres (hasta 20)`);
+                        } else {
+                            // Primeros 20 caracteres + adicionales a $3 cada uno
+                            const extraChars = textLength - 20;
+                            textCost = 10 + (extraChars * 3);
+                            costBreakdown.push(`Texto adicional #${index + 1}: +$${textCost} MXN`);
+                            costBreakdown.push(`  └ 20 caracteres base ($10) + ${extraChars} extras ($${extraChars * 3})`);
+                        }
+                        
+                        price += textCost;
+                    }
+                });
+            }
+            
+            // Costo por tiempo de entrega
+            const deliveryTimeInput = document.querySelector('input[name="delivery-time"]:checked');
+            const deliveryTime = deliveryTimeInput ? deliveryTimeInput.value : 'standard';
+            appState.deliveryTime = deliveryTime;
+            
+            if (deliveryTime === 'express') {
+                price += 100;
+                costBreakdown.push(`⚡ Entrega Express (3-5 días): +$100 MXN`);
+                document.getElementById('summary-delivery').textContent = '⚡ 3-5 días';
+            } else {
+                costBreakdown.push(`📦 Entrega Estándar (7-12 días): Sin costo`);
+                document.getElementById('summary-delivery').textContent = '📦 7-12 días';
+            }
+            
+            // Mostrar desglose en el resumen
+            const breakdownElement = document.getElementById('cost-breakdown');
+            if (breakdownElement) {
+                breakdownElement.innerHTML = costBreakdown.map(item => 
+                    `<div class="flex justify-between text-gray-700">
+                        <span>${item.split(':')[0]}:</span>
+                        <span class="font-semibold">${item.split(':')[1] || ''}</span>
+                    </div>`
+                ).join('');
+            }
+            
+            const total = price * quantity;
+            document.getElementById('summary-total').textContent = '$' + total.toFixed(2) + ' MXN';
+        }
+
+        // Guardar diseño en Firebase
+        function saveDesignToFirebase() {
+            const designName = document.getElementById('design-name')?.value || 'Mi Diseño ' + new Date().toLocaleDateString();
+            const notes = document.getElementById('notes')?.value || '';
+            
+            const design = {
+                name: designName,
+                garmentType: appState.garmentType,
+                garmentColor: appState.garmentColor,
+                garmentColorName: appState.garmentColorName,
+                material: appState.material,
+                size: appState.size,
+                designMethod: appState.designMethod,
+                embroidery: appState.embroidery,
+                print: appState.print,
+                elements: appState.elements,
+                quantity: appState.quantity,
+                notes: notes,
+                customerInfo: appState.customerInfo || {},
+                timestamp: new Date().toISOString(),
+                total: document.getElementById('summary-total')?.textContent || '$250.00 MXN'
+            };
+            
+            // DEMO: Guardar en localStorage (en producción, usar Firebase)
+            try {
+                let savedDesigns = JSON.parse(localStorage.getItem('garmentDesigns') || '[]');
+                savedDesigns.push(design);
+                localStorage.setItem('garmentDesigns', JSON.stringify(savedDesigns));
+                
+                // No mostrar toast aquí para no interrumpir el flujo
+                
+                // En producción, usar Firebase:
+                // db.collection('designs').add(design)
+                //     .then(() => {
+                //         // success
+                //     })
+                //     .catch(error => {
+                //         showToast('Error al guardar: ' + error.message, 'error');
+                //     });
+            } catch (error) {
+                showToast('Error al guardar el diseño', 'error');
+            }
+        }
+
+        // Cargar diseños guardados
+        function loadSavedDesigns() {
+            const modal = document.getElementById('designs-modal');
+            const list = document.getElementById('saved-designs-list');
+            
+            // DEMO: Cargar desde localStorage
+            try {
+                const savedDesigns = JSON.parse(localStorage.getItem('garmentDesigns') || '[]');
+                
+                if (savedDesigns.length === 0) {
+                    list.innerHTML = '<p class="col-span-2 text-center text-gray-500 py-8">No tienes diseños guardados aún</p>';
+                } else {
+                    list.innerHTML = savedDesigns.map((design, index) => `
+                        <div class="border-2 border-gray-200 rounded-lg p-4 hover:border-gray-400 transition cursor-pointer" onclick="loadDesign(${index})">
+                            <h4 class="font-semibold text-lg mb-2">${design.name}</h4>
+                            <p class="text-sm text-gray-600 mb-1">${design.garmentType} - ${design.garmentColorName}</p>
+                            <p class="text-sm text-gray-600 mb-2">${design.elements.length} elementos</p>
+                            <p class="text-sm text-gray-500">${new Date(design.timestamp).toLocaleDateString()}</p>
+                            <p class="text-xl font-bold text-amber-600 mt-2">${design.total}</p>
+                        </div>
+                    `).join('');
+                }
+                
+                modal.classList.remove('hidden');
+                modal.classList.add('flex');
+                
+                // En producción, usar Firebase:
+                // db.collection('designs').get()
+                //     .then(snapshot => {
+                //         // Renderizar diseños
+                //     });
+            } catch (error) {
+                showToast('Error al cargar diseños', 'error');
+            }
+        }
+
+        // Cargar un diseño específico
+        function loadDesign(index) {
+            try {
+                const savedDesigns = JSON.parse(localStorage.getItem('garmentDesigns') || '[]');
+                const design = savedDesigns[index];
+                
+                if (design) {
+                    // Restaurar estado
+                    appState = {
+                        ...appState,
+                        garmentType: design.garmentType,
+                        garmentColor: design.garmentColor,
+                        garmentColorName: design.garmentColorName,
+                        material: design.material,
+                        size: design.size || 'mediana',
+                        designMethod: design.designMethod || 'bordado',
+                        embroidery: design.embroidery || { text: '', font: 'serif', position: 'centro-pecho', color: '#000000' },
+                        print: design.print || { imageData: null, position: 'centro-pecho', size: 'mediano' },
+                        elements: design.elements,
+                        quantity: design.quantity
+                    };
+                    
+                    // Actualizar UI
+                    document.querySelector(`input[value="${design.garmentType}"]`).checked = true;
+                    document.getElementById('material-select').value = design.material;
+                    document.getElementById('garment-shape').setAttribute('fill', design.garmentColor);
+                    if (document.getElementById('quantity')) {
+                        document.getElementById('quantity').value = design.quantity;
+                    }
+                    
+                    // Restaurar método de diseño
+                    if (design.designMethod) {
+                        document.querySelector(`input[name="design-method"][value="${design.designMethod}"]`).checked = true;
+                        toggleDesignMethod();
+                    }
+                    
+                    // Limpiar y re-renderizar elementos
+                    document.getElementById('design-area').innerHTML = '';
+                    elementIdCounter = 0;
+                    design.elements.forEach(element => {
+                        if (element.id > elementIdCounter) elementIdCounter = element.id;
+                        renderElement(element);
+                    });
+                    
+                    updateGarment();
+                    updateSummary();
+                    closeModal();
+                    showToast('Diseño cargado correctamente');
+                }
+            } catch (error) {
+                showToast('Error al cargar el diseño', 'error');
+            }
+        }
+
+        // Cerrar modal
+        function closeModal(event) {
+            if (!event || event.target.id === 'designs-modal') {
+                document.getElementById('designs-modal').classList.add('hidden');
+                document.getElementById('designs-modal').classList.remove('flex');
+            }
+        }
+
+        // Reiniciar diseño
+        function resetDesign() {
+            if (confirm('¿Estás seguro de que quieres reiniciar el diseño? Se perderán todos los cambios no guardados.')) {
+                appState = {
+                    garmentType: 'playera',
+                    garmentColor: '#ffffff',
+                    garmentColorName: 'Blanco',
+                    material: 'algodon',
+                    size: 'mediana',
+                    designMethod: 'bordado',
+                    embroidery: {
+                        text: '',
+                        font: 'serif',
+                        position: 'centro-pecho',
+                        color: '#000000'
+                    },
+                    print: {
+                        imageData: null,
+                        position: 'centro-pecho',
+                        size: 'mediano'
+                    },
+                    elements: [],
+                    selectedElement: null,
+                    textColor: '#000000',
+                    basePrice: 200,
+                    quantity: 1
+                };
+                
+                document.getElementById('design-area').innerHTML = '';
+                elementIdCounter = 0;
+                
+                // Resetear formularios
+                document.querySelector('input[name="design-method"][value="bordado"]').checked = true;
+                toggleDesignMethod();
+                document.getElementById('embroidery-text').value = '';
+                document.getElementById('print-image').value = '';
+                document.getElementById('image-preview').classList.add('hidden');
+                
+                updateGarment();
+                updateSummary();
+                switchTab('producto');
+                showToast('Diseño reiniciado');
+            }
+        }
+
+        // Mostrar notificación toast
+        function showToast(message, type = 'success') {
+            const toast = document.createElement('div');
+            toast.className = 'toast';
+            toast.innerHTML = `
+                <div class="flex items-center gap-3">
+                    <span class="text-2xl">${type === 'success' ? '✓' : '⚠'}</span>
+                    <span>${message}</span>
+                </div>
+            `;
+            
+            document.body.appendChild(toast);
+            
+            setTimeout(() => {
+                toast.style.animation = 'slideInUp 0.4s ease-out reverse';
+                setTimeout(() => toast.remove(), 400);
+            }, 3000);
+        }
+
+        // Configurar cantidad en el resumen
+        if (document.getElementById('quantity')) {
+            document.getElementById('quantity').addEventListener('change', updateSummary);
+        }
+    </script>
+</body>
+</html>
